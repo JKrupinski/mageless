@@ -1,0 +1,59 @@
+---
+import type { Facet } from '@lib/catalog';
+import { toggleFacetUrl } from '@lib/catalog';
+
+interface Props {
+  facets: Facet[];
+  url: URL;
+}
+
+const { facets, url } = Astro.props;
+
+const activeValues = (code: string) =>
+  new Set((url.searchParams.get(code) ?? '').split(',').filter(Boolean));
+
+const hasActiveFilters = facets.some((facet) => activeValues(facet.code).size > 0);
+---
+
+{
+  /* Facets are plain links: filtering works with JavaScript disabled, every
+    combination is a real URL, and the result is server-rendered. */
+}
+<aside aria-label="Filters" class="flex flex-col gap-6">
+  {
+    hasActiveFilters && (
+      <a href={url.pathname} class="text-sm font-medium text-brand-700 hover:underline">
+        Clear all filters
+      </a>
+    )
+  }
+
+  {
+    facets.map((facet) => {
+      const active = activeValues(facet.code);
+      return (
+        <details open={active.size > 0} class="border-b border-border-subtle pb-4">
+          <summary class="cursor-pointer list-none text-sm font-semibold text-ink">
+            {facet.label}
+            {active.size > 0 && <span class="ml-2 text-brand-700">({active.size})</span>}
+          </summary>
+          <ul class="mt-3 flex flex-col gap-1.5">
+            {facet.options.slice(0, 12).map((option) => (
+              <li>
+                <a
+                  href={toggleFacetUrl(url, facet.code, option.value)}
+                  rel="nofollow"
+                  aria-pressed={active.has(option.value)}
+                  class="flex items-center justify-between gap-2 text-sm text-ink-muted hover:text-ink aria-pressed:font-semibold aria-pressed:text-brand-700"
+                >
+                  <span>{option.label}</span>
+                  <span class="text-xs">{option.count}</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </details>
+      );
+    })
+  }
+</aside>

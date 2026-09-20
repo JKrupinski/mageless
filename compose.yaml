@@ -1,0 +1,58 @@
+# Runs the storefront next to the Magento stack in ../magento.
+#
+#   docker compose up --build
+#
+# The container joins Magento's compose network so it can reach nginx directly;
+# `magento.test` is mapped to that service, which keeps the GraphQL endpoint
+# identical to the one used during local development.
+services:
+  storefront:
+    build:
+      context: .
+      args:
+        PUBLIC_MAGENTO_GRAPHQL_ENDPOINT: https://magento.test/graphql
+        PUBLIC_MAGENTO_BASE_URL: https://magento.test/
+        PUBLIC_SITE_URL: http://localhost:4321
+    ports:
+      - '4321:4321'
+    environment:
+      PUBLIC_MAGENTO_GRAPHQL_ENDPOINT: https://magento.test/graphql
+      PUBLIC_MAGENTO_BASE_URL: https://magento.test/
+      PUBLIC_MAGENTO_STORE_CODE: default
+      PUBLIC_SITE_URL: http://localhost:4321
+      REDIS_URL: redis://redis:6379
+      REDIS_DB: '5'
+      GRAPHQL_CACHE_TTL: '300'
+      # Magento's local certificate is self-signed; trust it explicitly rather
+      # than disabling verification.
+      NODE_EXTRA_CA_CERTS: /etc/ssl/magento/nginx.crt
+    volumes:
+      # docker-magento keeps the generated certificate in this named volume.
+      - magento_ssldata:/etc/ssl/magento:ro
+    extra_hosts:
+      # Resolve magento.test to the nginx container inside the shared network.
+      - 'magento.test:host-gateway'
+    networks:
+      - magento_default
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+  # A cache of the storefront's own, so it never competes with Magento for
+  # memory or eviction policy. Drop this service and point REDIS_URL at
+  # Magento's valkey if you would rather share one instance.
+  redis:
+    image: valkey/valkey:9.1-alpine
+    command:
+      ['valkey-server', '--save', '', '--maxmemory', '256mb', '--maxmemory-policy', 'allkeys-lru']
+    networks:
+      - magento_default
+    restart: unless-stopped
+
+networks:
+  magento_default:
+    external: true
+
+volumes:
+  magento_ssldata:
+    external: true

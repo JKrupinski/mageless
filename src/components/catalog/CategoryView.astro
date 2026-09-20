@@ -1,0 +1,96 @@
+---
+import { ProductGrid } from '@/components/product/ProductGrid';
+import Breadcrumbs from '@/components/layout/Breadcrumbs.astro';
+import FacetSidebar from '@/components/layout/FacetSidebar.astro';
+import Pagination from '@/components/layout/Pagination.astro';
+import { SORT_OPTIONS, type Facet } from '@lib/catalog';
+import type { ProductCardData } from '@/components/product/ProductCard';
+
+interface Props {
+  name: string;
+  descriptionHtml: string | null;
+  breadcrumbs: { name: string; href: string }[];
+  products: readonly (ProductCardData | null)[];
+  facets: Facet[];
+  totalCount: number;
+  currentPage: number;
+  totalPages: number;
+  sort: string;
+  url: URL;
+  locale: string;
+}
+
+const {
+  name,
+  descriptionHtml,
+  breadcrumbs,
+  products,
+  facets,
+  totalCount,
+  currentPage,
+  totalPages,
+  sort,
+  url,
+  locale,
+} = Astro.props;
+
+const buildHref = (page: number) => {
+  const next = new URL(url.toString());
+  if (page <= 1) next.searchParams.delete('p');
+  else next.searchParams.set('p', String(page));
+  return `${next.pathname}${next.search}`;
+};
+
+const sortHref = (value: string) => {
+  const next = new URL(url.toString());
+  if (value === 'position') next.searchParams.delete('sort');
+  else next.searchParams.set('sort', value);
+  next.searchParams.delete('p');
+  return `${next.pathname}${next.search}`;
+};
+---
+
+<Breadcrumbs items={breadcrumbs} />
+
+<header class="mt-4">
+  <h1 class="text-2xl font-semibold tracking-tight text-ink">{name}</h1>
+  {
+    descriptionHtml && (
+      <div class="mt-2 max-w-3xl text-sm text-ink-muted" set:html={descriptionHtml} />
+    )
+  }
+</header>
+
+<div class="mt-6 grid gap-8 lg:grid-cols-[16rem_1fr]">
+  <FacetSidebar facets={facets} url={url} />
+
+  <div>
+    <div
+      class="flex flex-wrap items-center justify-between gap-3 border-b border-border-subtle pb-3"
+    >
+      <p class="text-sm text-ink-muted" aria-live="polite">
+        {totalCount}
+        {totalCount === 1 ? 'product' : 'products'}
+      </p>
+      <nav aria-label="Sort by" class="flex flex-wrap items-center gap-1 text-sm">
+        <span class="mr-1 text-ink-muted">Sort:</span>
+        {
+          SORT_OPTIONS.map((option) => (
+            <a
+              href={sortHref(option.value)}
+              rel="nofollow"
+              aria-current={sort === option.value ? 'true' : undefined}
+              class="rounded-[--radius-control] px-2 py-1 text-ink-muted hover:bg-surface-muted aria-[current]:font-semibold aria-[current]:text-brand-700"
+            >
+              {option.label}
+            </a>
+          ))
+        }
+      </nav>
+    </div>
+
+    <ProductGrid className="mt-6" products={products} locale={locale} priorityCount={4} />
+
+    <Pagination currentPage={currentPage} totalPages={totalPages} buildHref={buildHref} />
+  </div>
+</div>

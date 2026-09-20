@@ -1,0 +1,83 @@
+---
+import '@/styles/global.css';
+import Header from '@/components/layout/Header.astro';
+import Footer from '@/components/layout/Footer.astro';
+import { getStoreConfig } from '@lib/catalog';
+
+interface Props {
+  title: string;
+  description?: string;
+  canonical?: string;
+  /** schema.org documents emitted as <script type="application/ld+json">. */
+  jsonLd?: Record<string, unknown>[];
+  image?: string | null;
+  noindex?: boolean;
+  searchTerm?: string;
+}
+
+const {
+  title,
+  description = '',
+  canonical,
+  jsonLd = [],
+  image = null,
+  noindex = false,
+  searchTerm = '',
+} = Astro.props;
+
+const store = await getStoreConfig().catch(() => ({
+  storeName: 'Headless Commerce',
+  locale: 'en-US',
+  currency: 'USD',
+  titlePrefix: '',
+  titleSuffix: '',
+  defaultDescription: '',
+  productUrlSuffix: '.html',
+  categoryUrlSuffix: '.html',
+  gridPerPage: 12,
+}));
+
+const canonicalUrl = canonical ?? new URL(Astro.url.pathname, Astro.site ?? Astro.url).toString();
+const fullTitle = [store.titlePrefix, title, store.titleSuffix].filter(Boolean).join(' ');
+const metaDescription = description || store.defaultDescription;
+---
+
+<!doctype html>
+<html lang={store.locale.split('-')[0]}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{fullTitle}</title>
+    {metaDescription && <meta name="description" content={metaDescription} />}
+    <link rel="canonical" href={canonicalUrl} />
+    {noindex && <meta name="robots" content="noindex, follow" />}
+
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={fullTitle} />
+    {metaDescription && <meta property="og:description" content={metaDescription} />}
+    <meta property="og:url" content={canonicalUrl} />
+    {image && <meta property="og:image" content={image} />}
+    <meta name="twitter:card" content={image ? 'summary_large_image' : 'summary'} />
+
+    {
+      /* Magento serves catalogue images from its own origin: warm the
+        connection before the first <img> is discovered. */
+    }
+    <link rel="preconnect" href={import.meta.env.PUBLIC_MAGENTO_BASE_URL} crossorigin />
+
+    {
+      jsonLd.map((document) => (
+        <script type="application/ld+json" set:html={JSON.stringify(document)} />
+      ))
+    }
+  </head>
+
+  <body class="min-h-dvh bg-surface text-ink">
+    <a href="#main" class="skip-link">Skip to content</a>
+    <Header locale={store.locale} searchTerm={searchTerm} />
+    <main id="main" class="mx-auto max-w-7xl px-4 py-8">
+      <slot />
+    </main>
+    <Footer storeName={store.storeName} />
+  </body>
+</html>

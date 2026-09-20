@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+.astro/
+storybook-static/
+
+# Test artefacts
+coverage/
+playwright-report/
+test-results/
+
+# Environment — .env.example is the documented template
+.env
+.env.*
+!.env.example
+
+# NOTE: schema.graphql and src/lib/graphql/graphql-env.d.ts are generated from
+# the live Magento instance but are committed on purpose — CI type-checks the
+# GraphQL documents without needing a reachable Magento. Regenerate with
+# `npm run schema:generate && npm run schema:turbo` after a backend change.
+
+# Editors / OS
+.DS_Store
+*.log

@@ -1,0 +1,115 @@
+@import 'tailwindcss';
+
+/*
+ * Design tokens.
+ *
+ * Everything the design system draws with is declared here once, as Tailwind v4
+ * theme variables. Components never hard-code a hex value or a raw pixel size —
+ * they reference a token, which is what makes re-theming a single-file change.
+ */
+@theme {
+  /* Brand ---------------------------------------------------------------- */
+  --color-brand-50: oklch(0.971 0.014 254);
+  --color-brand-100: oklch(0.932 0.032 255);
+  --color-brand-200: oklch(0.885 0.062 254);
+  --color-brand-300: oklch(0.809 0.105 252);
+  --color-brand-400: oklch(0.707 0.165 254);
+  --color-brand-500: oklch(0.623 0.214 259);
+  --color-brand-600: oklch(0.546 0.245 262);
+  --color-brand-700: oklch(0.488 0.243 264);
+  --color-brand-800: oklch(0.424 0.199 265);
+  --color-brand-900: oklch(0.379 0.146 265);
+
+  /* Semantic ------------------------------------------------------------- */
+  --color-surface: oklch(1 0 0);
+  --color-surface-muted: oklch(0.975 0.002 258);
+  --color-surface-inset: oklch(0.955 0.004 258);
+  --color-border-subtle: oklch(0.91 0.005 258);
+  --color-ink: oklch(0.21 0.02 258);
+  --color-ink-muted: oklch(0.52 0.015 258);
+  /* Status colours are darkened until they clear 4.5:1 as text on --color-surface
+     (WCAG 2.1 AA, 1.4.3); the tinted badge backgrounds use the same hue at low
+     alpha, so one token drives both. */
+  --color-success: oklch(0.5 0.14 150);
+  --color-danger: oklch(0.51 0.2 25);
+  --color-sale: oklch(0.51 0.2 25);
+
+  /* Typography ----------------------------------------------------------- */
+  --font-sans: 'Inter var', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  /* Shape ---------------------------------------------------------------- */
+  --radius-card: 0.75rem;
+  --radius-control: 0.5rem;
+
+  /* Motion --------------------------------------------------------------- */
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --color-surface: oklch(0.19 0.015 258);
+    --color-surface-muted: oklch(0.23 0.015 258);
+    --color-surface-inset: oklch(0.27 0.015 258);
+    --color-border-subtle: oklch(0.33 0.012 258);
+    --color-ink: oklch(0.96 0.005 258);
+    --color-ink-muted: oklch(0.72 0.012 258);
+    /* On a dark surface the same hues have to move the other way. */
+    --color-success: oklch(0.8 0.16 150);
+    --color-danger: oklch(0.75 0.16 25);
+    --color-sale: oklch(0.75 0.16 25);
+  }
+}
+
+:root[data-theme='dark'] {
+  --color-surface: oklch(0.19 0.015 258);
+  --color-surface-muted: oklch(0.23 0.015 258);
+  --color-surface-inset: oklch(0.27 0.015 258);
+  --color-border-subtle: oklch(0.33 0.012 258);
+  --color-ink: oklch(0.96 0.005 258);
+  --color-ink-muted: oklch(0.72 0.012 258);
+  --color-success: oklch(0.8 0.16 150);
+  --color-danger: oklch(0.75 0.16 25);
+  --color-sale: oklch(0.75 0.16 25);
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    scrollbar-gutter: stable;
+  }
+
+  body {
+    background-color: var(--color-surface);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Visible focus for keyboard users everywhere — a WCAG 2.4.7 baseline. */
+  :focus-visible {
+    outline: 2px solid var(--color-brand-600);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer components {
+  /* Skip link: hidden until focused, then pinned to the top-left. */
+  .skip-link {
+    @apply sr-only;
+  }
+  .skip-link:focus {
+    @apply not-sr-only fixed top-2 left-2 z-50 rounded-[--radius-control] bg-brand-600 px-4 py-2 text-white;
+  }
+}

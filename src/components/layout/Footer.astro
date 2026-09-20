@@ -1,0 +1,19 @@
+---
+interface Props {
+  storeName?: string;
+}
+const { storeName = 'Headless Commerce' } = Astro.props;
+const year = new Date().getFullYear();
+---
+
+<footer class="mt-16 border-t border-border-subtle bg-surface-muted">
+  <div
+    class="mx-auto flex max-w-7xl flex-col gap-2 px-4 py-8 text-sm text-ink-muted sm:flex-row sm:items-center sm:justify-between"
+  >
+    <p>© {year} {storeName}</p>
+    <p>
+      Astro SSR storefront on Magento GraphQL — catalogue, search and cart only, checkout stays in
+      Magento.
+    </p>
+  </div>
+</footer>

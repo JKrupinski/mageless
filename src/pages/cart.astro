@@ -1,0 +1,21 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { CartLines } from '@/components/cart/CartLines';
+import { getCart, toCartSummary } from '@lib/cart/server';
+import { getStoreConfig } from '@lib/catalog';
+
+const store = await getStoreConfig();
+const cart = await getCart(Astro.cookies).catch(() => null);
+const summary = toCartSummary(cart);
+---
+
+{
+  /* The cart is per-shopper: rendered server-side from the httpOnly cart id,
+    never cached, and never indexed. */
+}
+<BaseLayout title="Your cart" noindex>
+  <h1 class="text-2xl font-semibold tracking-tight text-ink">Your cart</h1>
+  <div class="mt-6">
+    <CartLines client:load initialCart={summary} locale={store.locale} />
+  </div>
+</BaseLayout>

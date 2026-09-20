@@ -1,0 +1,8 @@
+dist
+node_modules
+storybook-static
+playwright-report
+test-results
+coverage
+schema.graphql
+src/lib/graphql/graphql-env.d.ts

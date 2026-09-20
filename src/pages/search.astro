@@ -1,0 +1,108 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { ProductGrid } from '@/components/product/ProductGrid';
+import Pagination from '@/components/layout/Pagination.astro';
+import { execute } from '@lib/graphql/client';
+import { SearchQuery } from '@lib/graphql/queries/catalog';
+import { SORT_OPTIONS, getStoreConfig, toSortInput } from '@lib/catalog';
+import { searchSchema } from '@lib/cart/schemas';
+
+const store = await getStoreConfig();
+const rawTerm = Astro.url.searchParams.get('q') ?? '';
+const currentPage = Math.max(1, Number(Astro.url.searchParams.get('p') ?? '1') || 1);
+const sort = Astro.url.searchParams.get('sort') ?? 'relevance';
+
+// The same Zod schema the search island uses, applied again on the server.
+const parsed = searchSchema.safeParse({ q: rawTerm });
+const term = parsed.success ? parsed.data.q : '';
+
+const result = term
+  ? await execute(SearchQuery, {
+      variables: {
+        search: term,
+        sort: sort === 'relevance' ? { relevance: 'DESC' as const } : toSortInput(sort),
+        pageSize: store.gridPerPage,
+        currentPage,
+      },
+      cache: { ttl: 120 },
+    })
+  : null;
+
+const totalCount = result?.products?.total_count ?? 0;
+const totalPages = result?.products?.page_info?.total_pages ?? 1;
+
+const buildHref = (page: number) => {
+  const next = new URL(Astro.url.toString());
+  if (page <= 1) next.searchParams.delete('p');
+  else next.searchParams.set('p', String(page));
+  return `${next.pathname}${next.search}`;
+};
+
+const sortHref = (value: string) => {
+  const next = new URL(Astro.url.toString());
+  if (value === 'relevance') next.searchParams.delete('sort');
+  else next.searchParams.set('sort', value);
+  next.searchParams.delete('p');
+  return `${next.pathname}${next.search}`;
+};
+---
+
+{/* Search result pages carry no index value and are kept out of the index. */}
+<BaseLayout
+  title={term ? `Search: ${term}` : 'Search'}
+  description={term ? `Products matching “${term}”` : 'Search the catalogue'}
+  noindex
+  searchTerm={term}
+>
+  <h1 class="text-2xl font-semibold tracking-tight text-ink">
+    {term ? <>Results for “{term}”</> : 'Search'}
+  </h1>
+
+  {
+    !parsed.success && rawTerm.length > 0 && (
+      <p role="alert" class="mt-3 text-sm text-danger">
+        {parsed.error.issues[0]?.message}
+      </p>
+    )
+  }
+
+  {
+    term && (
+      <>
+        <div class="mt-4 flex flex-wrap items-center justify-between gap-3 border-b border-border-subtle pb-3">
+          <p class="text-sm text-ink-muted" aria-live="polite">
+            {totalCount} {totalCount === 1 ? 'product' : 'products'}
+          </p>
+          <nav aria-label="Sort by" class="flex flex-wrap items-center gap-1 text-sm">
+            <span class="mr-1 text-ink-muted">Sort:</span>
+            <a
+              href={sortHref('relevance')}
+              aria-current={sort === 'relevance' ? 'true' : undefined}
+              class="rounded-[--radius-control] px-2 py-1 text-ink-muted hover:bg-surface-muted aria-[current]:font-semibold aria-[current]:text-brand-700"
+            >
+              Relevance
+            </a>
+            {SORT_OPTIONS.filter((option) => option.value !== 'position').map((option) => (
+              <a
+                href={sortHref(option.value)}
+                aria-current={sort === option.value ? 'true' : undefined}
+                class="rounded-[--radius-control] px-2 py-1 text-ink-muted hover:bg-surface-muted aria-[current]:font-semibold aria-[current]:text-brand-700"
+              >
+                {option.label}
+              </a>
+            ))}
+          </nav>
+        </div>
+
+        <ProductGrid
+          className="mt-6"
+          products={result?.products?.items ?? []}
+          locale={store.locale}
+          emptyMessage={`Nothing matched “${term}”. Try a different word.`}
+        />
+
+        <Pagination currentPage={currentPage} totalPages={totalPages} buildHref={buildHref} />
+      </>
+    )
+  }
+</BaseLayout>

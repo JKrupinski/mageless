@@ -1,0 +1,64 @@
+---
+interface Props {
+  currentPage: number;
+  totalPages: number;
+  /** Page URLs are real links so the listing stays crawlable and JS-free. */
+  buildHref: (page: number) => string;
+}
+
+const { currentPage, totalPages, buildHref } = Astro.props;
+
+const windowSize = 2;
+const pages: number[] = [];
+for (let page = 1; page <= totalPages; page += 1) {
+  const nearCurrent = Math.abs(page - currentPage) <= windowSize;
+  if (page === 1 || page === totalPages || nearCurrent) pages.push(page);
+}
+---
+
+{
+  totalPages > 1 && (
+    <nav aria-label="Pagination" class="mt-8 flex justify-center">
+      <ul class="flex items-center gap-1">
+        <li>
+          <a
+            href={currentPage > 1 ? buildHref(currentPage - 1) : undefined}
+            aria-disabled={currentPage === 1}
+            rel="prev"
+            class="inline-flex h-9 items-center rounded-[--radius-control] border border-border-subtle px-3 text-sm text-ink aria-disabled:pointer-events-none aria-disabled:opacity-40"
+          >
+            Previous
+          </a>
+        </li>
+        {pages.map((page, index) => (
+          <>
+            {index > 0 && pages[index - 1] !== page - 1 && (
+              <li aria-hidden="true" class="px-1 text-ink-muted">
+                …
+              </li>
+            )}
+            <li>
+              <a
+                href={buildHref(page)}
+                aria-current={page === currentPage ? 'page' : undefined}
+                class="inline-flex size-9 items-center justify-center rounded-[--radius-control] border border-border-subtle text-sm text-ink aria-[current=page]:border-brand-600 aria-[current=page]:bg-brand-600 aria-[current=page]:text-white"
+              >
+                {page}
+              </a>
+            </li>
+          </>
+        ))}
+        <li>
+          <a
+            href={currentPage < totalPages ? buildHref(currentPage + 1) : undefined}
+            aria-disabled={currentPage === totalPages}
+            rel="next"
+            class="inline-flex h-9 items-center rounded-[--radius-control] border border-border-subtle px-3 text-sm text-ink aria-disabled:pointer-events-none aria-disabled:opacity-40"
+          >
+            Next
+          </a>
+        </li>
+      </ul>
+    </nav>
+  )
+}

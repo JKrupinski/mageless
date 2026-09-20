@@ -1,0 +1,86 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { ProductGrid } from '@/components/product/ProductGrid';
+import { execute } from '@lib/graphql/client';
+import { HomeQuery } from '@lib/graphql/queries/catalog';
+import { getNavigation, getStoreConfig } from '@lib/catalog';
+import { websiteJsonLd } from '@lib/seo/jsonld';
+
+const [store, navigation] = await Promise.all([getStoreConfig(), getNavigation()]);
+
+// Merchandise the busiest leaf category rather than hard-coding a category id.
+// Anchor categories like "What's New" carry no directly-assigned products, so
+// picking the first menu entry would render an empty row on a stock data set.
+const featuredCategory =
+  navigation
+    .flatMap((item) => item.children)
+    .sort((a, b) => (b.productCount ?? 0) - (a.productCount ?? 0))[0] ?? navigation[0];
+
+const data = await execute(HomeQuery, {
+  variables: { categoryUid: featuredCategory?.uid ?? '', pageSize: 8 },
+  cache: { ttl: 300 },
+});
+
+const categories = (data.categories?.items ?? []).flatMap((category) =>
+  category ? [category] : [],
+);
+const siteUrl = Astro.site?.toString() ?? Astro.url.origin;
+---
+
+<BaseLayout
+  title={store.storeName}
+  description={store.defaultDescription || `Shop ${store.storeName}`}
+  jsonLd={[websiteJsonLd(siteUrl.replace(/\/$/, ''), store.storeName)]}
+>
+  <section class="rounded-[--radius-card] bg-brand-600 px-6 py-14 text-center text-white">
+    <h1 class="text-3xl font-semibold tracking-tight sm:text-4xl">{store.storeName}</h1>
+    <p class="mx-auto mt-3 max-w-xl text-brand-50">
+      A server-rendered storefront on top of Magento GraphQL — catalogue, faceted search and cart,
+      with React islands only where interaction demands them.
+    </p>
+  </section>
+
+  <section class="mt-12" aria-labelledby="shop-by-category">
+    <h2 id="shop-by-category" class="text-lg font-semibold text-ink">Shop by category</h2>
+    <ul class="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+      {
+        categories.map((category) => (
+          <li>
+            <a
+              href={`/${category.url_path ?? ''}${category.url_suffix ?? ''}`}
+              class="flex h-full flex-col justify-between rounded-[--radius-card] border border-border-subtle p-4 transition-colors hover:border-brand-500 hover:bg-surface-muted"
+            >
+              <span class="font-medium text-ink">{category.name}</span>
+              <span class="mt-2 text-xs text-ink-muted">{category.product_count} products</span>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+
+  {
+    featuredCategory && (
+      <section class="mt-12" aria-labelledby="featured">
+        <div class="flex items-baseline justify-between">
+          <h2 id="featured" class="text-lg font-semibold text-ink">
+            {featuredCategory.name}
+          </h2>
+          <a
+            href={featuredCategory.href}
+            class="text-sm font-medium text-brand-700 hover:underline"
+          >
+            View all {data.products?.total_count ?? 0}
+          </a>
+        </div>
+        {/* Rendered on the server with zero client JavaScript. */}
+        <ProductGrid
+          className="mt-4"
+          products={data.products?.items ?? []}
+          locale={store.locale}
+          priorityCount={4}
+        />
+      </section>
+    )
+  }
+</BaseLayout>

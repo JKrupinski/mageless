@@ -1,0 +1,126 @@
+name: CI
+
+# This workflow assumes `frontend/` is the repository root. If the whole
+# headless-commerce directory is one repository instead, move this file to the
+# top level and add `working-directory: frontend` to each run step.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '24'
+
+jobs:
+  quality:
+    name: Types, lint and unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      # The Magento schema is committed, so the GraphQL documents are checked
+      # here without a reachable Magento instance.
+      - name: Type-check
+        run: npm run typecheck
+
+      - name: Validate GraphQL documents against the schema
+        run: npx gql.tada check
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Check formatting
+        run: npm run format:check
+
+      - name: Unit tests with coverage
+        run: npm run test:coverage
+
+      - name: Upload coverage
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage
+          path: coverage
+          retention-days: 7
+
+  storybook:
+    name: Build Storybook
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Build the design system
+        run: npm run build-storybook
+      - uses: actions/upload-artifact@v4
+        with:
+          name: storybook
+          path: storybook-static
+          retention-days: 7
+
+  e2e:
+    name: E2E and accessibility
+    runs-on: ubuntu-latest
+    # These need a reachable Magento. Point the repository variable
+    # MAGENTO_GRAPHQL_ENDPOINT at a staging instance to switch the job on.
+    if: vars.MAGENTO_GRAPHQL_ENDPOINT != ''
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run Playwright (functional + axe-core)
+        env:
+          PUBLIC_MAGENTO_GRAPHQL_ENDPOINT: ${{ vars.MAGENTO_GRAPHQL_ENDPOINT }}
+          PUBLIC_MAGENTO_BASE_URL: ${{ vars.MAGENTO_BASE_URL }}
+          PUBLIC_SITE_URL: http://localhost:4321
+          GRAPHQL_CACHE_ENABLED: 'false'
+        run: npx playwright test
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: playwright-report
+          retention-days: 7
+
+  docker:
+    name: Build container image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          tags: headless-commerce-storefront:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

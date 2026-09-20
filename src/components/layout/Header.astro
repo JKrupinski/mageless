@@ -1,0 +1,83 @@
+---
+import { SearchBox } from '@/components/search/SearchBox';
+import { CartWidget } from '@/components/cart/CartWidget';
+import { getNavigation } from '@lib/catalog';
+import { getCart, toCartSummary } from '@lib/cart/server';
+import { EMPTY_CART } from '@lib/cart/types';
+
+interface Props {
+  locale?: string;
+  searchTerm?: string;
+}
+
+const { locale = 'en-US', searchTerm = '' } = Astro.props;
+
+// Navigation and cart are fetched in parallel; the navigation comes from the
+// shared cache, the cart never does (it is per-shopper).
+const [navigation, cart] = await Promise.all([
+  getNavigation().catch(() => []),
+  getCart(Astro.cookies).catch(() => null),
+]);
+
+const cartSummary = cart ? toCartSummary(cart) : EMPTY_CART;
+const currentPath = Astro.url.pathname;
+---
+
+<header class="sticky top-0 z-30 border-b border-border-subtle bg-surface/95 backdrop-blur">
+  <div class="mx-auto flex max-w-7xl flex-wrap items-center gap-4 px-4 py-3">
+    <a href="/" class="text-lg font-semibold tracking-tight text-ink">
+      headless<span class="text-brand-600">/commerce</span>
+    </a>
+
+    <div class="order-3 w-full sm:order-2 sm:w-auto sm:flex-1">
+      {
+        /* Idle hydration: search is not needed for first paint, but must be
+          ready before a shopper reaches for it. */
+      }
+      <SearchBox client:idle initialTerm={searchTerm} locale={locale} />
+    </div>
+
+    <div class="order-2 ml-auto sm:order-3">
+      {
+        /* Loaded eagerly: the badge count and drawer are the first thing a
+          returning shopper interacts with. */
+      }
+      <CartWidget client:load initialCart={cartSummary} locale={locale} />
+    </div>
+  </div>
+
+  <nav aria-label="Main" class="mx-auto max-w-7xl px-4">
+    <ul class="flex flex-wrap gap-x-6 gap-y-1 pb-2 text-sm">
+      {
+        navigation.map((item) => (
+          <li class="group relative">
+            <a
+              href={item.href}
+              aria-current={currentPath === item.href ? 'page' : undefined}
+              class="inline-block py-1.5 font-medium text-ink hover:text-brand-700 aria-[current=page]:text-brand-700"
+            >
+              {item.name}
+            </a>
+            {item.children.length > 0 && (
+              <ul class="absolute left-0 top-full hidden min-w-52 rounded-[--radius-card] border border-border-subtle bg-surface p-2 shadow-xl group-hover:block group-focus-within:block">
+                {item.children.map((child) => (
+                  <li>
+                    <a
+                      href={child.href}
+                      class="flex items-center justify-between gap-4 rounded-[--radius-control] px-3 py-1.5 text-ink hover:bg-surface-muted"
+                    >
+                      {child.name}
+                      {child.productCount !== null && (
+                        <span class="text-xs text-ink-muted">{child.productCount}</span>
+                      )}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </li>
+        ))
+      }
+    </ul>
+  </nav>
+</header>

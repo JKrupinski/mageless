@@ -1,0 +1,206 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import ProductView from '@/components/catalog/ProductView.astro';
+import CategoryView from '@/components/catalog/CategoryView.astro';
+import type { ProductCardData } from '@/components/product/ProductCard';
+import { execute } from '@lib/graphql/client';
+import { CategoryPageQuery, ProductPageQuery, RouteQuery } from '@lib/graphql/queries/catalog';
+import {
+  FILTERABLE_ATTRIBUTES,
+  buildProductFilters,
+  getStoreConfig,
+  toFacets,
+  toSortInput,
+  type Facet,
+} from '@lib/catalog';
+import { toProductViewModel, type ProductViewModel } from '@lib/viewmodels/product';
+import { breadcrumbJsonLd, itemListJsonLd } from '@lib/seo/jsonld';
+import { productUrl, toPlainText } from '@lib/format';
+
+/**
+ * One catch-all route backed by Magento's own URL resolver.
+ *
+ * Every storefront URL keeps the exact shape Magento publishes
+ * (`/women/tops-women.html`, `/erika-running-short.html`), so existing SEO,
+ * redirects and backlinks survive the move to a headless frontend.
+ */
+/*
+ * `Astro.params.path` drops a trailing `.html`, because Astro treats it as the
+ * page extension. Magento's resolver needs the URL exactly as published,
+ * suffix included, so the raw pathname is the source of truth here.
+ */
+const relativeUrl = decodeURIComponent(Astro.url.pathname).replace(/^\/+/, '');
+
+if (!relativeUrl) return Astro.redirect('/', 302);
+
+const store = await getStoreConfig();
+const siteUrl = (Astro.site?.toString() ?? Astro.url.origin).replace(/\/$/, '');
+
+const { route } = await execute(RouteQuery, {
+  variables: { url: relativeUrl },
+  cache: { ttl: 600 },
+});
+
+// Magento answers with a redirect code when a URL key has changed.
+if (route?.redirect_code && route.relative_url && route.relative_url !== relativeUrl) {
+  return Astro.redirect(`/${route.relative_url}`, route.redirect_code === 301 ? 301 : 302);
+}
+
+const isProduct = Boolean(route && route.type === 'PRODUCT' && 'url_key' in route);
+const isCategory = Boolean(route && route.type === 'CATEGORY' && 'url_path' in route);
+
+// --- Product ---------------------------------------------------------------
+let product: ProductViewModel | null = null;
+if (route && isProduct && 'url_key' in route && route.url_key) {
+  const result = await execute(ProductPageQuery, {
+    variables: { urlKey: route.url_key },
+    cache: { ttl: 300 },
+  });
+  const item = result.products?.items?.[0];
+  if (item) product = toProductViewModel(item, siteUrl);
+}
+
+// --- Category --------------------------------------------------------------
+interface CategoryPageData {
+  name: string;
+  descriptionHtml: string | null;
+  breadcrumbs: { name: string; href: string }[];
+  products: (ProductCardData | null)[];
+  facets: Facet[];
+  totalCount: number;
+  totalPages: number;
+  seoTitle: string;
+  seoDescription: string;
+  jsonLd: Record<string, unknown>[];
+}
+
+const currentPage = Math.max(1, Number(Astro.url.searchParams.get('p') ?? '1') || 1);
+const sort = Astro.url.searchParams.get('sort') ?? 'position';
+let categoryData: CategoryPageData | null = null;
+
+if (route && isCategory && 'url_path' in route && route.url_path) {
+  const urlPath = route.url_path;
+  const filters = {
+    category_url_path: { eq: urlPath },
+    ...buildProductFilters(Astro.url.searchParams, FILTERABLE_ATTRIBUTES),
+  };
+
+  const result = await execute(CategoryPageQuery, {
+    variables: {
+      urlPath,
+      filters,
+      sort: toSortInput(sort),
+      pageSize: store.gridPerPage,
+      currentPage,
+    },
+    cache: { ttl: 180 },
+  });
+
+  const node = result.categories?.items?.[0];
+  if (node) {
+    const items = [...(result.products?.items ?? [])];
+    const crumbs = [
+      ...(node.breadcrumbs ?? []).flatMap((crumb) =>
+        crumb
+          ? [
+              {
+                name: crumb.category_name ?? '',
+                href: `/${crumb.category_url_path ?? ''}${node.url_suffix ?? ''}`,
+              },
+            ]
+          : [],
+      ),
+      { name: node.name ?? '', href: `/${node.url_path ?? ''}${node.url_suffix ?? ''}` },
+    ];
+
+    categoryData = {
+      name: node.name ?? '',
+      descriptionHtml: node.description ?? null,
+      breadcrumbs: crumbs,
+      products: items,
+      facets: toFacets(result.products?.aggregations),
+      totalCount: result.products?.total_count ?? 0,
+      totalPages: result.products?.page_info?.total_pages ?? 1,
+      seoTitle: node.meta_title ?? node.name ?? '',
+      seoDescription: toPlainText(node.meta_description ?? node.description),
+      jsonLd: [
+        breadcrumbJsonLd(
+          crumbs.map((crumb) => ({ name: crumb.name, url: `${siteUrl}${crumb.href}` })),
+        ),
+        itemListJsonLd(
+          items.flatMap((item) =>
+            item ? [{ name: item.name ?? '', url: `${siteUrl}${productUrl(item)}` }] : [],
+          ),
+        ),
+      ],
+    };
+  }
+}
+
+const notFound = !product && !categoryData;
+if (notFound) Astro.response.status = 404;
+
+// Filtered and paginated listings must not compete with the clean category URL
+// in the search index.
+const hasQuery = Astro.url.search.length > 0;
+---
+
+{
+  product && (
+    <BaseLayout
+      title={product.seo.title}
+      description={product.seo.description}
+      image={product.seo.image}
+      jsonLd={product.jsonLd}
+    >
+      <ProductView product={product} locale={store.locale} />
+    </BaseLayout>
+  )
+}
+
+{
+  categoryData && (
+    <BaseLayout
+      title={categoryData.seoTitle}
+      description={categoryData.seoDescription}
+      jsonLd={categoryData.jsonLd}
+      noindex={hasQuery}
+      canonical={`${siteUrl}/${relativeUrl}`}
+    >
+      <CategoryView
+        name={categoryData.name}
+        descriptionHtml={categoryData.descriptionHtml}
+        breadcrumbs={categoryData.breadcrumbs}
+        products={categoryData.products}
+        facets={categoryData.facets}
+        totalCount={categoryData.totalCount}
+        currentPage={currentPage}
+        totalPages={categoryData.totalPages}
+        sort={sort}
+        url={Astro.url}
+        locale={store.locale}
+      />
+    </BaseLayout>
+  )
+}
+
+{
+  notFound && (
+    <BaseLayout title="Page not found" noindex>
+      <div class="py-20 text-center">
+        <p class="text-sm font-medium text-brand-700">404</p>
+        <h1 class="mt-2 text-2xl font-semibold text-ink">We could not find that page</h1>
+        <p class="mt-2 text-sm text-ink-muted">
+          The URL <code class="rounded bg-surface-inset px-1.5 py-0.5">/{relativeUrl}</code> does
+          not match a product or category in this store.
+        </p>
+        <a
+          href="/"
+          class="mt-6 inline-block rounded-[--radius-control] bg-brand-600 px-4 py-2 text-sm font-medium text-white"
+        >
+          Back to the storefront
+        </a>
+      </div>
+    </BaseLayout>
+  )
+}

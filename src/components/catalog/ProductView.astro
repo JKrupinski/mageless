@@ -1,0 +1,74 @@
+---
+import { ProductGallery } from '@/components/product/ProductGallery';
+import { AddToCartForm } from '@/components/product/AddToCartForm';
+import { Rating } from '@ui/Rating';
+import Breadcrumbs from '@/components/layout/Breadcrumbs.astro';
+import type { ProductViewModel } from '@lib/viewmodels/product';
+
+interface Props {
+  product: ProductViewModel;
+  locale: string;
+}
+
+const { product, locale } = Astro.props;
+---
+
+<Breadcrumbs items={product.breadcrumbs} />
+
+<div class="mt-6 grid gap-10 lg:grid-cols-2">
+  <div>
+    {/* Visible hydration: the gallery only matters once it is on screen. */}
+    <ProductGallery client:visible images={product.gallery} productName={product.name} />
+  </div>
+
+  <div class="flex flex-col gap-5">
+    <div>
+      <h1 class="text-2xl font-semibold tracking-tight text-ink">{product.name}</h1>
+      <p class="mt-1 text-sm text-ink-muted">SKU: {product.sku}</p>
+      <Rating className="mt-2" percent={product.ratingPercent} reviewCount={product.reviewCount} />
+    </div>
+
+    {
+      product.shortDescriptionHtml && (
+        <div
+          class="prose-sm text-sm leading-relaxed text-ink-muted"
+          set:html={product.shortDescriptionHtml}
+        />
+      )
+    }
+
+    {
+      product.onlyXLeft !== null && product.onlyXLeft > 0 && (
+        <p class="text-sm font-medium text-sale">Only {product.onlyXLeft} left in stock</p>
+      )
+    }
+
+    <AddToCartForm
+      client:load
+      sku={product.sku}
+      name={product.name}
+      inStock={product.inStock}
+      locale={locale}
+      options={product.options}
+      variants={product.variants}
+      final={product.price.final}
+      regular={product.price.regular}
+      percentOff={product.price.percentOff}
+      maximum={product.price.maximum}
+    />
+  </div>
+</div>
+
+{
+  product.descriptionHtml && (
+    <section class="mt-12 max-w-3xl" aria-labelledby="description">
+      <h2 id="description" class="text-lg font-semibold text-ink">
+        Details
+      </h2>
+      <div
+        class="mt-3 text-sm leading-relaxed text-ink-muted [&_li]:list-disc [&_ul]:mt-2 [&_ul]:pl-5"
+        set:html={product.descriptionHtml}
+      />
+    </section>
+  )
+}
