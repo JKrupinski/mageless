@@ -5,8 +5,10 @@ GraphQL. It covers catalogue browsing, faceted category listings, search and the
 **Checkout is deliberately out of scope** — the cart page ends at a disabled button, and
 payment/shipping stay in Magento.
 
-The backend is the `docker-magento` stack in [`../magento`](../magento), reachable at
-`https://magento.test/`.
+The backend is a [`markshust/docker-magento`](https://github.com/markshust/docker-magento)
+stack in [`../magento`](../magento), reachable at `https://magento.test/`. It is the
+recommended way to get a local Magento instance with a working GraphQL API — see
+[Magento backend](#magento-backend) below.
 
 ---
 
@@ -75,6 +77,21 @@ store config 1 h). If valkey is unreachable the storefront logs once and serves 
 - Node 22+ (developed on 24)
 - The Magento stack in `../magento` running and reachable at `https://magento.test/`
 - valkey/redis — the Magento stack already exposes one on `:6379`
+
+### Magento backend
+
+This storefront doesn't run Magento itself — it needs one reachable over GraphQL, and
+[`markshust/docker-magento`](https://github.com/markshust/docker-magento) is the recommended
+way to get one locally. Follow that repo's own instructions to set it up as `../magento`
+(next to, not inside, this `frontend/` folder), reachable at `https://magento.test/`, then
+come back here.
+
+Two things specific to using it as this project's backend:
+
+- **Sample data.** Deploy Magento's sample catalogue; without it the storefront has nothing
+  to render.
+- **Blackfire must be disabled**, or every GraphQL response gets ~900 kB of HTML appended to
+  it — see [below](#two-things-to-know-about-the-magento-side).
 
 ### Setup
 
