@@ -14,17 +14,17 @@ recommended way to get a local Magento instance with a working GraphQL API — s
 
 ## Architecture at a glance
 
-| Concern       | Choice                                    | Why                                                                                |
-| ------------- | ----------------------------------------- | ---------------------------------------------------------------------------------- |
-| Rendering     | Astro 7, `output: 'server'`, Node adapter | Catalogue HTML is crawlable and fast on first paint; islands add interaction back. |
-| UI            | React 19 + TypeScript (strict)            | Component model the team already knows, with server rendering for free.            |
-| Data          | gql.tada + `graphql`                      | Types are inferred from the document text — no codegen step to keep in sync.       |
-| Styling       | Tailwind CSS v4, `@theme` tokens          | One file defines the design tokens; components never hard-code a value.            |
-| Client state  | Nanostores                                | ~1 kB, framework-agnostic, no provider tree around islands.                        |
-| Forms         | React Hook Form + Zod                     | One schema validates in the browser _and_ in the API route.                        |
-| Server cache  | valkey/redis via ioredis                  | Shared cache for anonymous GraphQL reads; a cache outage only costs latency.       |
-| Tests         | Vitest, Playwright, axe-core              | Unit for logic, E2E for flows, automated WCAG scans per page type.                 |
-| Design system | Storybook 10                              | Components are developed and reviewed in isolation, with the a11y addon on.        |
+| Concern       | Choice                                    | Why                                                                                                                                                                                                |
+| ------------- | ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Rendering     | Astro 7, `output: 'server'`, Node adapter | Catalogue HTML is crawlable and fast on first paint; islands add interaction back.                                                                                                                 |
+| UI            | React 19 + TypeScript (strict)            | Component model the team already knows, with server rendering for free.                                                                                                                            |
+| Data          | gql.tada + `graphql`                      | Types are inferred from the document text — no codegen step to keep in sync.                                                                                                                       |
+| Styling       | Tailwind CSS v4, `@theme` tokens          | One file defines the design tokens; components never hard-code a value.                                                                                                                            |
+| Client state  | Nanostores                                | ~1 kB, framework-agnostic, no provider tree around islands.                                                                                                                                        |
+| Forms         | React Hook Form + Zod                     | One schema validates in the browser _and_ in the API route.                                                                                                                                        |
+| Server cache  | valkey/redis via ioredis                  | Shared cache for anonymous GraphQL reads; a cache outage only costs latency.                                                                                                                       |
+| Tests         | Vitest, Playwright, axe-core              | Unit for logic, E2E for flows, automated WCAG scans per page type.                                                                                                                                 |
+| Design system | Storybook 10, shadcn/ui (Radix base)      | Compound primitives (Dialog, Select, RadioGroup, Tabs) on our own `@theme` tokens — no separate colour/spacing system. Components are developed and reviewed in isolation, with the a11y addon on. |
 
 ### Routing mirrors Magento
 
@@ -52,6 +52,15 @@ runs is the cart and the gallery.
 | `AddToCartForm`               | `client:load`    | The primary action on the page.                |
 | `SearchBox`                   | `client:idle`    | Needed soon, but not for first paint.          |
 | `ProductGallery`              | `client:visible` | Only matters once it is on screen.             |
+
+### One island per compound component
+
+Astro islands do not share React context across separate `client:*` directives — each
+directive mounts its own isolated React tree. A compound component built from Radix
+primitives (e.g. `Dialog`'s `Trigger` + `Content`, or `Select`'s `Trigger` + `Content`) relies
+on context to coordinate its parts, so all of it must be composed inside one `.tsx` file and
+mounted as a single island. Splitting a trigger and its content across two islands silently
+breaks them — the trigger fires into a context provider the content island never sees.
 
 ### The cart is server-authoritative
 
