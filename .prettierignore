@@ -6,3 +6,7 @@ test-results
 coverage
 schema.graphql
 src/lib/graphql/graphql-env.d.ts
+
+# Vendored skill content synced from mattpocock/skills, verified by hash in
+# skills-lock.json — reformatting would desync those hashes.
+.agents
