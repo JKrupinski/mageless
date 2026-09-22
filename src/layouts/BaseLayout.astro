@@ -13,6 +13,8 @@ interface Props {
   image?: string | null;
   noindex?: boolean;
   searchTerm?: string;
+  /** Pages that own their gutter (a full-bleed hero) opt out of the container. */
+  bleed?: boolean;
 }
 
 const {
@@ -23,10 +25,11 @@ const {
   image = null,
   noindex = false,
   searchTerm = '',
+  bleed = false,
 } = Astro.props;
 
 const store = await getStoreConfig().catch(() => ({
-  storeName: 'Headless Commerce',
+  storeName: 'Mageless',
   locale: 'en-US',
   currency: 'USD',
   titlePrefix: '',
@@ -52,6 +55,14 @@ const metaDescription = description || store.defaultDescription;
     <link rel="canonical" href={canonicalUrl} />
     {noindex && <meta name="robots" content="noindex, follow" />}
 
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    {
+      /* The browser paints the address bar from this before any CSS loads, so
+        both values are declared rather than derived from the theme tokens. */
+    }
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#fafafa" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#181a20" />
+
     <meta property="og:type" content="website" />
     <meta property="og:title" content={fullTitle} />
     {metaDescription && <meta property="og:description" content={metaDescription} />}
@@ -66,16 +77,44 @@ const metaDescription = description || store.defaultDescription;
     <link rel="preconnect" href={import.meta.env.PUBLIC_MAGENTO_BASE_URL} crossorigin />
 
     {
+      /* Inter, variable, with `display=swap` so text is never invisible while
+        it loads. The fallback stack in --font-sans is metrically close, which
+        keeps the swap from reflowing the page (CLS). Self-hosting instead is
+        one edit — see docs/THEMING.md. */
+    }
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400..700&display=swap"
+    />
+
+    {
+      /* Applies the stored theme before first paint. Inline and synchronous on
+        purpose: deferring it would show one frame of the wrong theme. */
+    }
+    <script is:inline>
+      try {
+        const stored = localStorage.getItem('mageless:theme');
+        if (stored === 'light' || stored === 'dark') {
+          document.documentElement.setAttribute('data-theme', stored);
+        }
+      } catch {
+        /* Private mode or blocked storage: fall back to the OS preference. */
+      }
+    </script>
+
+    {
       jsonLd.map((document) => (
         <script type="application/ld+json" set:html={JSON.stringify(document)} />
       ))
     }
   </head>
 
-  <body class="min-h-dvh bg-surface text-ink">
+  <body class="flex min-h-dvh flex-col bg-canvas text-ink">
     <a href="#main" class="skip-link">Skip to content</a>
-    <Header locale={store.locale} searchTerm={searchTerm} />
-    <main id="main" class="mx-auto max-w-7xl px-4 py-8">
+    <Header locale={store.locale} searchTerm={searchTerm} storeName={store.storeName} />
+    <main id="main" class:list={['flex-1', bleed ? 'pb-16' : 'container-page py-8 sm:py-10']}>
       <slot />
     </main>
     <Footer storeName={store.storeName} />

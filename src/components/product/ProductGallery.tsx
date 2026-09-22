@@ -16,12 +16,16 @@ export function ProductGallery({ images, productName }: ProductGalleryProps) {
   const current = images[active] ?? images[0];
 
   if (!current) {
-    return <div className="aspect-square w-full rounded-[--radius-card] bg-surface-inset" />;
+    return (
+      <div className="flex aspect-4/5 w-full items-center justify-center rounded-card bg-surface-sunken text-sm text-ink-muted">
+        No image available
+      </div>
+    );
   }
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="overflow-hidden rounded-[--radius-card] bg-surface-muted">
+      <div className="overflow-hidden rounded-card bg-surface-sunken">
         <img
           src={current.url}
           alt={current.label ?? productName}
@@ -30,12 +34,12 @@ export function ProductGallery({ images, productName }: ProductGalleryProps) {
           /* The main image is the product page's LCP element. */
           fetchPriority="high"
           decoding="sync"
-          className="aspect-[4/5] w-full object-cover"
+          className="aspect-4/5 w-full object-cover"
         />
       </div>
 
       {images.length > 1 ? (
-        <ul className="flex gap-2 overflow-x-auto pb-1">
+        <ul className="hide-scrollbar flex gap-3 overflow-x-auto py-1">
           {images.map((image, index) => (
             <li key={image.url}>
               <button
@@ -44,10 +48,11 @@ export function ProductGallery({ images, productName }: ProductGalleryProps) {
                 aria-label={`Show image ${index + 1} of ${images.length}`}
                 aria-current={index === active}
                 className={classNames(
-                  'overflow-hidden rounded-[--radius-control] border-2 transition-colors',
+                  'block cursor-pointer overflow-hidden rounded-control bg-surface-sunken',
+                  'outline-2 outline-offset-2 transition-[outline-color] duration-150 ease-out-soft',
                   index === active
-                    ? 'border-brand-600'
-                    : 'border-transparent hover:border-border-subtle',
+                    ? 'outline-ink'
+                    : 'outline-transparent hover:outline-line-strong',
                 )}
               >
                 <img
@@ -57,7 +62,7 @@ export function ProductGallery({ images, productName }: ProductGalleryProps) {
                   height={90}
                   loading="lazy"
                   decoding="async"
-                  className="size-18 aspect-[4/5] w-18 object-cover"
+                  className="aspect-4/5 w-16 object-cover"
                 />
               </button>
             </li>

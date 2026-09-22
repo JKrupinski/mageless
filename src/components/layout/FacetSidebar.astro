@@ -12,19 +12,69 @@ const { facets, url } = Astro.props;
 const activeValues = (code: string) =>
   new Set((url.searchParams.get(code) ?? '').split(',').filter(Boolean));
 
-const hasActiveFilters = facets.some((facet) => activeValues(facet.code).size > 0);
+const activeChips = facets.flatMap((facet) => {
+  const active = activeValues(facet.code);
+  return facet.options
+    .filter((option) => active.has(option.value))
+    .map((option) => ({
+      label: option.label,
+      facetLabel: facet.label,
+      href: toggleFacetUrl(url, facet.code, option.value),
+    }));
+});
+
+/** Past this many options the list gets its own scroll region rather than
+ *  pushing every other facet off the screen. */
+const SCROLL_AFTER = 8;
 ---
 
 {
   /* Facets are plain links: filtering works with JavaScript disabled, every
     combination is a real URL, and the result is server-rendered. */
 }
-<aside aria-label="Filters" class="flex flex-col gap-6">
+<aside aria-label="Filters" class="flex flex-col gap-5">
+  <div class="flex items-baseline justify-between gap-3">
+    <h2 class="text-xs font-semibold tracking-wider text-ink uppercase">Filters</h2>
+    {
+      activeChips.length > 0 && (
+        <a
+          href={url.pathname}
+          rel="nofollow"
+          class="text-xs font-medium text-accent-text underline-offset-2 hover:underline"
+        >
+          Clear all<span class="sr-only"> filters</span>
+        </a>
+      )
+    }
+  </div>
+
   {
-    hasActiveFilters && (
-      <a href={url.pathname} class="text-sm font-medium text-brand-700 hover:underline">
-        Clear all filters
-      </a>
+    /* What is currently narrowing the results, shown as removable chips. The
+      sidebar can be scrolled away on a long list, so the applied filters have
+      to be legible without hunting through every accordion. */
+    activeChips.length > 0 && (
+      <ul class="flex flex-wrap gap-1.5">
+        {activeChips.map((chip) => (
+          <li>
+            <a
+              href={chip.href}
+              rel="nofollow"
+              class="inline-flex items-center gap-1.5 rounded-control bg-accent-soft py-1 pr-2 pl-2.5 text-xs font-medium text-accent-text transition-colors hover:bg-accent-soft/70"
+            >
+              <span>{chip.label}</span>
+              <span class="sr-only">— remove {chip.facetLabel} filter</span>
+              <svg viewBox="0 0 12 12" class="size-3" aria-hidden="true">
+                <path
+                  d="M3 3l6 6M9 3l-6 6"
+                  stroke="currentColor"
+                  stroke-width="1.75"
+                  stroke-linecap="round"
+                />
+              </svg>
+            </a>
+          </li>
+        ))}
+      </ul>
     )
   }
 
@@ -32,25 +82,89 @@ const hasActiveFilters = facets.some((facet) => activeValues(facet.code).size > 
     facets.map((facet) => {
       const active = activeValues(facet.code);
       return (
-        <details open={active.size > 0} class="border-b border-border-subtle pb-4">
-          <summary class="cursor-pointer list-none text-sm font-semibold text-ink">
-            {facet.label}
-            {active.size > 0 && <span class="ml-2 text-brand-700">({active.size})</span>}
+        <details open={active.size > 0} class="group border-t border-line pt-4">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-2 text-sm font-semibold text-ink marker:content-none">
+            <span>
+              {facet.label}
+              {active.size > 0 && (
+                <span class="numeric ml-1.5 font-normal text-accent-text">({active.size})</span>
+              )}
+            </span>
+            {/* A disclosure with no marker reads as static text. */}
+            <svg
+              viewBox="0 0 16 16"
+              class="size-4 shrink-0 text-ink-subtle transition-transform duration-200 group-open:-rotate-180 motion-reduce:transition-none"
+              aria-hidden="true"
+            >
+              <path
+                d="M4 6l4 4 4-4"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.75"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
           </summary>
-          <ul class="mt-3 flex flex-col gap-1.5">
-            {facet.options.slice(0, 12).map((option) => (
-              <li>
-                <a
-                  href={toggleFacetUrl(url, facet.code, option.value)}
-                  rel="nofollow"
-                  aria-pressed={active.has(option.value)}
-                  class="flex items-center justify-between gap-2 text-sm text-ink-muted hover:text-ink aria-pressed:font-semibold aria-pressed:text-brand-700"
-                >
-                  <span>{option.label}</span>
-                  <span class="text-xs">{option.count}</span>
-                </a>
-              </li>
-            ))}
+
+          <ul
+            class:list={[
+              'mt-2 flex flex-col',
+              // Long facets (50 colours is normal in Magento) get a bounded
+              // scroll region. Every option stays reachable and in the DOM —
+              // truncating the list would hide results a shopper can no
+              // longer discover, with nothing to indicate they exist.
+              facet.options.length > SCROLL_AFTER && 'max-h-64 overflow-y-auto pr-1',
+            ]}
+          >
+            {facet.options.map((option) => {
+              const isActive = active.has(option.value);
+              return (
+                <li>
+                  <a
+                    href={toggleFacetUrl(url, facet.code, option.value)}
+                    rel="nofollow"
+                    class="-mx-2 flex min-h-9 items-center gap-2.5 rounded-control px-2 text-sm text-ink-muted transition-colors hover:bg-surface-hover hover:text-ink"
+                  >
+                    {/* A link cannot be aria-pressed, so the state is carried by
+                        a real glyph plus text in the accessible name. */}
+                    <span
+                      class:list={[
+                        'flex size-4 shrink-0 items-center justify-center rounded-[2px] border transition-colors',
+                        isActive
+                          ? 'border-accent bg-accent text-on-accent'
+                          : 'border-line-strong bg-surface',
+                      ]}
+                      aria-hidden="true"
+                    >
+                      {isActive && (
+                        <svg viewBox="0 0 12 12" class="size-3">
+                          <path
+                            d="M2.5 6.2l2.4 2.4 4.6-5"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.9"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                          />
+                        </svg>
+                      )}
+                    </span>
+                    <span class:list={['flex-1', isActive && 'font-medium text-ink']}>
+                      {option.label}
+                    </span>
+                    {/* The bare number reads as "8" on its own, so the visible
+                        count is hidden and the whole phrase is spelled out. */}
+                    <span aria-hidden="true" class="numeric text-xs text-ink-muted">
+                      {option.count}
+                    </span>
+                    <span class="sr-only">
+                      , {option.count} products, {isActive ? 'remove filter' : 'add filter'}
+                    </span>
+                  </a>
+                </li>
+              );
+            })}
           </ul>
         </details>
       );

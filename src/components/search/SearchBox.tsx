@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react';
-import { formatMoney, type MoneyLike } from '@lib/format';
-import { classNames } from '@lib/format';
+import { Search } from 'lucide-react';
+import { classNames, formatMoney, type MoneyLike } from '@lib/format';
 
 interface Suggestion {
   uid: string;
@@ -108,8 +108,14 @@ export function SearchBox({
   };
 
   return (
-    <div ref={containerRef} className="relative w-full max-w-md">
-      <form action="/search" method="get" role="search">
+    <div ref={containerRef} className="relative w-full">
+      <form action="/search" method="get" role="search" className="relative">
+        {/* Decorative: the field already has a visible label for assistive
+            technology via the sr-only <label> below. */}
+        <Search
+          className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-ink-subtle"
+          aria-hidden="true"
+        />
         <label htmlFor={`${listboxId}-input`} className="sr-only">
           Search products
         </label>
@@ -134,7 +140,18 @@ export function SearchBox({
           }}
           onKeyDown={onKeyDown}
           onFocus={() => setDismissed(false)}
-          className="h-10 w-full rounded-[--radius-control] border border-border-subtle bg-surface px-3 text-sm text-ink placeholder:text-ink-muted"
+          className={classNames(
+            'h-10 w-full rounded-control border border-line bg-surface-sunken py-2 pr-3 pl-9',
+            // 16px on phones: anything smaller makes iOS Safari zoom the page
+            // on focus and the shopper has to pinch back out.
+            'text-base sm:text-sm text-ink placeholder:text-ink-muted',
+            'transition-colors duration-150 ease-out-soft',
+            'hover:border-line-strong focus:border-line-strong focus:bg-surface',
+            // The browser's own clear button is styled per-platform and sits
+            // at a different offset in each; ours is not needed because the
+            // field is short-lived.
+            '[&::-webkit-search-cancel-button]:cursor-pointer',
+          )}
         />
       </form>
 
@@ -146,7 +163,7 @@ export function SearchBox({
       */}
       <div
         hidden={!open}
-        className="absolute top-full left-0 z-30 mt-1 w-full overflow-hidden rounded-[--radius-card] border border-border-subtle bg-surface shadow-xl"
+        className="absolute top-full left-0 z-50 mt-2 w-full overflow-hidden rounded-panel border border-line bg-surface shadow-xl"
       >
         <ul id={listboxId} role="listbox" aria-label="Search suggestions">
           {suggestions.map((suggestion, index) => (
@@ -160,8 +177,8 @@ export function SearchBox({
               }}
               onMouseEnter={() => setActiveIndex(index)}
               className={classNames(
-                'flex cursor-pointer items-center gap-3 p-2',
-                index === activeIndex && 'bg-surface-muted',
+                'flex cursor-pointer items-center gap-3 p-2 transition-colors',
+                index === activeIndex && 'bg-surface-hover',
               )}
             >
               {suggestion.image ? (
@@ -171,11 +188,11 @@ export function SearchBox({
                   width={40}
                   height={50}
                   loading="lazy"
-                  className="h-12 w-10 rounded object-cover"
+                  className="h-12 w-10 shrink-0 rounded-control bg-surface-sunken object-cover"
                 />
               ) : null}
-              <span className="flex-1 truncate text-sm text-ink">{suggestion.name}</span>
-              <span className="text-sm font-medium text-ink-muted">
+              <span className="min-w-0 flex-1 truncate text-sm text-ink">{suggestion.name}</span>
+              <span className="numeric shrink-0 text-sm font-medium text-ink">
                 {formatMoney(suggestion.price, locale)}
               </span>
             </li>
@@ -185,7 +202,7 @@ export function SearchBox({
         {totalCount > suggestions.length ? (
           <a
             href={`/search?q=${encodeURIComponent(trimmed)}`}
-            className="block border-t border-border-subtle p-2 text-center text-sm font-medium text-brand-700"
+            className="block border-t border-line p-2.5 text-center text-sm font-medium text-accent-text transition-colors hover:bg-surface-hover"
           >
             See all {totalCount} results
           </a>

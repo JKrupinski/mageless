@@ -1,0 +1,58 @@
+---
+import type { SubcategoryTile } from '@lib/viewmodels/category';
+
+interface Props {
+  categories: readonly SubcategoryTile[];
+  /** Tiles per row at the largest breakpoint. */
+  columns?: 3 | 6;
+  class?: string;
+}
+
+const { categories, columns = 3, class: className } = Astro.props;
+
+const COLUMNS = {
+  3: 'grid-cols-2 sm:grid-cols-3',
+  6: 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-6',
+} as const;
+---
+
+{
+  /* The same tile serves the home page's department row and a Category
+    Landing's Subcategories. They are the same thing to a shopper — a way into
+    a part of the catalogue — and were drifting apart as two copies. */
+}
+<ul class:list={['grid gap-3', COLUMNS[columns], className]}>
+  {
+    categories.map((category) => (
+      <li>
+        <a
+          href={category.href}
+          class="group flex h-full flex-col justify-between gap-6 rounded-card border border-line p-4 transition-colors duration-150 ease-out-soft hover:border-line-strong hover:bg-surface"
+        >
+          <span class="text-sm font-medium text-ink">{category.name}</span>
+          <span class="flex items-center justify-between gap-2">
+            {/* A Category Landing holds no products of its own; a bare "0"
+                reads as "empty shop" rather than "browse inside". */}
+            <span class="numeric text-xs text-ink-muted">
+              {category.productCount ? `${category.productCount} products` : 'Browse'}
+            </span>
+            <svg
+              viewBox="0 0 16 16"
+              class="size-3.5 text-ink-subtle transition-transform duration-200 ease-out-soft group-hover:translate-x-0.5 motion-reduce:transition-none"
+              aria-hidden="true"
+            >
+              <path
+                d="M3 8h10M9 4l4 4-4 4"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.75"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </span>
+        </a>
+      </li>
+    ))
+  }
+</ul>

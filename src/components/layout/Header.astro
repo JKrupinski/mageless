@@ -1,6 +1,8 @@
 ---
 import { SearchBox } from '@/components/search/SearchBox';
 import { CartWidget } from '@/components/cart/CartWidget';
+import { ThemeToggle } from '@/components/layout/ThemeToggle';
+import Logo from '@/components/brand/Logo.astro';
 import { getNavigation } from '@lib/catalog';
 import { getCart, toCartSummary } from '@lib/cart/server';
 import { EMPTY_CART } from '@lib/cart/types';
@@ -8,9 +10,10 @@ import { EMPTY_CART } from '@lib/cart/types';
 interface Props {
   locale?: string;
   searchTerm?: string;
+  storeName?: string;
 }
 
-const { locale = 'en-US', searchTerm = '' } = Astro.props;
+const { locale = 'en-US', searchTerm = '', storeName = 'Mageless' } = Astro.props;
 
 // Navigation and cart are fetched in parallel; the navigation comes from the
 // shared cache, the cart never does (it is per-shopper).
@@ -21,23 +24,32 @@ const [navigation, cart] = await Promise.all([
 
 const cartSummary = cart ? toCartSummary(cart) : EMPTY_CART;
 const currentPath = Astro.url.pathname;
+
+const isActive = (href: string) => currentPath === href || currentPath.startsWith(`${href}/`);
 ---
 
-<header class="sticky top-0 z-30 border-b border-border-subtle bg-surface/95 backdrop-blur">
-  <div class="mx-auto flex max-w-7xl flex-wrap items-center gap-4 px-4 py-3">
-    <a href="/" class="text-lg font-semibold tracking-tight text-ink">
-      headless<span class="text-brand-600">/commerce</span>
+<header class="sticky top-0 z-40 border-b border-line bg-surface/85 backdrop-blur-md">
+  <div class="container-page flex h-16 items-center gap-3 sm:gap-6">
+    <a href="/" class="shrink-0 rounded-control" aria-label={`${storeName} — home`}>
+      <Logo />
     </a>
 
-    <div class="order-3 w-full sm:order-2 sm:w-auto sm:flex-1">
-      {
-        /* Idle hydration: search is not needed for first paint, but must be
-          ready before a shopper reaches for it. */
-      }
-      <SearchBox client:idle initialTerm={searchTerm} locale={locale} />
+    {
+      /* Search takes the middle on desktop and its own row on phones, where a
+        40px-high field next to two icon buttons would leave no usable width. */
+    }
+    <div class="hidden min-w-0 flex-1 justify-center md:flex">
+      <div class="w-full max-w-md">
+        {
+          /* Idle hydration: search is not needed for first paint, but must be
+            ready before a shopper reaches for it. */
+        }
+        <SearchBox client:idle initialTerm={searchTerm} locale={locale} />
+      </div>
     </div>
 
-    <div class="order-2 ml-auto sm:order-3">
+    <div class="ml-auto flex shrink-0 items-center gap-0.5">
+      <ThemeToggle client:idle />
       {
         /* Loaded eagerly: the badge count and drawer are the first thing a
           returning shopper interacts with. */
@@ -46,38 +58,68 @@ const currentPath = Astro.url.pathname;
     </div>
   </div>
 
-  <nav aria-label="Main" class="mx-auto max-w-7xl px-4">
-    <ul class="flex flex-wrap gap-x-6 gap-y-1 pb-2 text-sm">
-      {
-        navigation.map((item) => (
-          <li class="group relative">
-            <a
-              href={item.href}
-              aria-current={currentPath === item.href ? 'page' : undefined}
-              class="inline-block py-1.5 font-medium text-ink hover:text-brand-700 aria-[current=page]:text-brand-700"
-            >
-              {item.name}
-            </a>
-            {item.children.length > 0 && (
-              <ul class="absolute left-0 top-full hidden min-w-52 rounded-[--radius-card] border border-border-subtle bg-surface p-2 shadow-xl group-hover:block group-focus-within:block">
-                {item.children.map((child) => (
-                  <li>
-                    <a
-                      href={child.href}
-                      class="flex items-center justify-between gap-4 rounded-[--radius-control] px-3 py-1.5 text-ink hover:bg-surface-muted"
-                    >
-                      {child.name}
-                      {child.productCount !== null && (
-                        <span class="text-xs text-ink-muted">{child.productCount}</span>
-                      )}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </li>
-        ))
-      }
-    </ul>
-  </nav>
+  <div class="container-page pb-3 md:hidden">
+    <SearchBox client:idle initialTerm={searchTerm} locale={locale} />
+  </div>
+
+  {
+    navigation.length > 0 && (
+      <nav aria-label="Main" class="border-t border-line/70">
+        {/* Scrolls horizontally on phones instead of wrapping to four lines.
+            The strip keeps every category one swipe away and needs no JS. */}
+        <ul class="container-page hide-scrollbar flex items-stretch gap-1 overflow-x-auto">
+          {navigation.map((item) => (
+            <li class="group relative shrink-0">
+              <a
+                href={item.href}
+                aria-current={currentPath === item.href ? 'page' : undefined}
+                class:list={[
+                  'relative inline-flex h-11 items-center px-3 text-sm font-medium whitespace-nowrap',
+                  'transition-colors duration-150 ease-out-soft',
+                  // The active marker is a rule under the label, not a colour
+                  // swap: it survives a monochrome skin (WCAG 1.4.1).
+                  'after:absolute after:inset-x-3 after:bottom-0 after:h-0.5 after:bg-current',
+                  'after:origin-left after:scale-x-0 after:transition-transform after:duration-200',
+                  'hover:after:scale-x-100 motion-reduce:after:transition-none',
+                  isActive(item.href)
+                    ? 'text-accent-text after:scale-x-100'
+                    : 'text-ink-muted hover:text-ink',
+                ]}
+              >
+                {item.name}
+              </a>
+
+              {item.children.length > 0 && (
+                <ul
+                  class:list={[
+                    'invisible absolute top-full left-0 z-50 min-w-60 opacity-0',
+                    'rounded-panel border border-line bg-surface p-1.5 shadow-xl',
+                    'transition-[opacity,visibility] duration-150 ease-out-soft',
+                    // focus-within, not hover alone, is what makes the submenu
+                    // reachable by keyboard (WCAG 2.1.1).
+                    'group-hover:visible group-hover:opacity-100',
+                    'group-focus-within:visible group-focus-within:opacity-100',
+                  ]}
+                >
+                  {item.children.map((child) => (
+                    <li>
+                      <a
+                        href={child.href}
+                        class="flex items-center justify-between gap-4 rounded-control px-3 py-2 text-sm text-ink transition-colors hover:bg-surface-hover"
+                      >
+                        <span>{child.name}</span>
+                        {child.productCount !== null && (
+                          <span class="numeric text-xs text-ink-muted">{child.productCount}</span>
+                        )}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </li>
+          ))}
+        </ul>
+      </nav>
+    )
+  }
 </header>

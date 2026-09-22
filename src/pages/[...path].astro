@@ -1,21 +1,27 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
+import NotFound from '@/components/layout/NotFound.astro';
 import ProductView from '@/components/catalog/ProductView.astro';
 import CategoryView from '@/components/catalog/CategoryView.astro';
-import type { ProductCardData } from '@/components/product/ProductCard';
 import { execute } from '@lib/graphql/client';
-import { CategoryPageQuery, ProductPageQuery, RouteQuery } from '@lib/graphql/queries/catalog';
+import {
+  CategoryFeaturedQuery,
+  CategoryPageQuery,
+  ProductPageQuery,
+  RouteQuery,
+} from '@lib/graphql/queries/catalog';
 import {
   FILTERABLE_ATTRIBUTES,
   buildProductFilters,
   getStoreConfig,
-  toFacets,
   toSortInput,
-  type Facet,
 } from '@lib/catalog';
 import { toProductViewModel, type ProductViewModel } from '@lib/viewmodels/product';
-import { breadcrumbJsonLd, itemListJsonLd } from '@lib/seo/jsonld';
-import { productUrl, toPlainText } from '@lib/format';
+import {
+  FEATURED_STRIP_SIZE,
+  toCategoryViewModel,
+  type CategoryViewModel,
+} from '@lib/viewmodels/category';
 
 /**
  * One catch-all route backed by Magento's own URL resolver.
@@ -61,22 +67,9 @@ if (route && isProduct && 'url_key' in route && route.url_key) {
 }
 
 // --- Category --------------------------------------------------------------
-interface CategoryPageData {
-  name: string;
-  descriptionHtml: string | null;
-  breadcrumbs: { name: string; href: string }[];
-  products: (ProductCardData | null)[];
-  facets: Facet[];
-  totalCount: number;
-  totalPages: number;
-  seoTitle: string;
-  seoDescription: string;
-  jsonLd: Record<string, unknown>[];
-}
-
 const currentPage = Math.max(1, Number(Astro.url.searchParams.get('p') ?? '1') || 1);
 const sort = Astro.url.searchParams.get('sort') ?? 'position';
-let categoryData: CategoryPageData | null = null;
+let category: CategoryViewModel | null = null;
 
 if (route && isCategory && 'url_path' in route && route.url_path) {
   const urlPath = route.url_path;
@@ -98,46 +91,30 @@ if (route && isCategory && 'url_path' in route && route.url_path) {
 
   const node = result.categories?.items?.[0];
   if (node) {
-    const items = [...(result.products?.items ?? [])];
-    const crumbs = [
-      ...(node.breadcrumbs ?? []).flatMap((crumb) =>
-        crumb
-          ? [
-              {
-                name: crumb.category_name ?? '',
-                href: `/${crumb.category_url_path ?? ''}${node.url_suffix ?? ''}`,
-              },
-            ]
-          : [],
-      ),
-      { name: node.name ?? '', href: `/${node.url_path ?? ''}${node.url_suffix ?? ''}` },
-    ];
-
-    categoryData = {
-      name: node.name ?? '',
-      descriptionHtml: node.description ?? null,
-      breadcrumbs: crumbs,
-      products: items,
-      facets: toFacets(result.products?.aggregations),
-      totalCount: result.products?.total_count ?? 0,
-      totalPages: result.products?.page_info?.total_pages ?? 1,
-      seoTitle: node.meta_title ?? node.name ?? '',
-      seoDescription: toPlainText(node.meta_description ?? node.description),
-      jsonLd: [
-        breadcrumbJsonLd(
-          crumbs.map((crumb) => ({ name: crumb.name, url: `${siteUrl}${crumb.href}` })),
-        ),
-        itemListJsonLd(
-          items.flatMap((item) =>
-            item ? [{ name: item.name ?? '', url: `${siteUrl}${productUrl(item)}` }] : [],
-          ),
-        ),
-      ],
-    };
+    category = await toCategoryViewModel(
+      { node, products: result.products, siteUrl, url: Astro.url },
+      {
+        /*
+         * A second round trip, and only on a Category Landing: the strip's
+         * source is whichever descendant is busiest, which is not known until
+         * the Category's own tree has come back.
+         */
+        async fetchFeatured(categoryUid) {
+          const featured = await execute(CategoryFeaturedQuery, {
+            variables: { categoryUid, pageSize: FEATURED_STRIP_SIZE },
+            cache: { ttl: 300 },
+          });
+          return {
+            totalCount: featured.products?.total_count ?? 0,
+            products: featured.products?.items ?? [],
+          };
+        },
+      },
+    );
   }
 }
 
-const notFound = !product && !categoryData;
+const notFound = !product && !category;
 if (notFound) Astro.response.status = 404;
 
 // Filtered and paginated listings must not compete with the clean category URL
@@ -159,23 +136,17 @@ const hasQuery = Astro.url.search.length > 0;
 }
 
 {
-  categoryData && (
+  category && (
     <BaseLayout
-      title={categoryData.seoTitle}
-      description={categoryData.seoDescription}
-      jsonLd={categoryData.jsonLd}
+      title={category.seo.title}
+      description={category.seo.description}
+      jsonLd={category.jsonLd}
       noindex={hasQuery}
       canonical={`${siteUrl}/${relativeUrl}`}
     >
       <CategoryView
-        name={categoryData.name}
-        descriptionHtml={categoryData.descriptionHtml}
-        breadcrumbs={categoryData.breadcrumbs}
-        products={categoryData.products}
-        facets={categoryData.facets}
-        totalCount={categoryData.totalCount}
+        category={category}
         currentPage={currentPage}
-        totalPages={categoryData.totalPages}
         sort={sort}
         url={Astro.url}
         locale={store.locale}
@@ -187,20 +158,7 @@ const hasQuery = Astro.url.search.length > 0;
 {
   notFound && (
     <BaseLayout title="Page not found" noindex>
-      <div class="py-20 text-center">
-        <p class="text-sm font-medium text-brand-700">404</p>
-        <h1 class="mt-2 text-2xl font-semibold text-ink">We could not find that page</h1>
-        <p class="mt-2 text-sm text-ink-muted">
-          The URL <code class="rounded bg-surface-inset px-1.5 py-0.5">/{relativeUrl}</code> does
-          not match a product or category in this store.
-        </p>
-        <a
-          href="/"
-          class="mt-6 inline-block rounded-[--radius-control] bg-brand-600 px-4 py-2 text-sm font-medium text-white"
-        >
-          Back to the storefront
-        </a>
-      </div>
+      <NotFound path={relativeUrl} />
     </BaseLayout>
   )
 }

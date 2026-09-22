@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 44" width="220" height="44" role="img" aria-label="Mageless — a headless storefront for Magento 2">
+  <style>
+    :root { --accent: oklch(0.47 0.19 264); --ink: oklch(0.205 0.012 265); --muted: oklch(0.505 0.014 265); }
+    @media (prefers-color-scheme: dark) { :root { --accent: oklch(0.78 0.13 264); --ink: oklch(0.96 0.003 265); --muted: oklch(0.735 0.012 265); } }
+    .mark { fill: var(--accent); }
+    .w1 { fill: var(--ink); }
+    .w2 { fill: var(--accent); }
+    .tag { fill: var(--muted); }
+    text { font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
+  </style>
+  <g transform="translate(2 6)">
+    <path class="mark" d="M16 2.2 21 7.4H11z"/>
+    <path class="mark" d="M9.8 11h12.4L28 17 16 29.4 4 17z"/>
+  </g>
+  <text x="42" y="22" font-size="19" font-weight="600" letter-spacing="-0.57">
+    <tspan class="w1">mage</tspan><tspan class="w2">less</tspan>
+  </text>
+  <text x="42" y="35" class="tag" font-size="9.5" letter-spacing="0.01">A headless storefront for Magento 2</text>
+</svg>

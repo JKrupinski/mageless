@@ -10,7 +10,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'The single button primitive. Variants map to intent, never to a colour — that is what keeps re-theming a token change.',
+          'The single button primitive. Variants map to intent, never to a colour — that is what keeps re-theming a token change. `primary` is an ink fill; `accent` is reserved for the one conversion action on a page, which is what keeps the accent meaning something.',
       },
     },
   },
@@ -20,9 +20,11 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Primary: Story = {};
+export const Accent: Story = { args: { variant: 'accent' } };
 export const Secondary: Story = { args: { variant: 'secondary' } };
 export const Ghost: Story = { args: { variant: 'ghost' } };
 export const Danger: Story = { args: { variant: 'danger', children: 'Remove' } };
+export const Link: Story = { args: { variant: 'link', children: 'View all 50 products' } };
 export const Loading: Story = { args: { loading: true } };
 export const Disabled: Story = { args: { disabled: true, children: 'Out of stock' } };
 

@@ -2,6 +2,7 @@
 import { ProductGallery } from '@/components/product/ProductGallery';
 import { AddToCartForm } from '@/components/product/AddToCartForm';
 import { Rating } from '@ui/Rating';
+import { Badge } from '@ui/Badge';
 import Breadcrumbs from '@/components/layout/Breadcrumbs.astro';
 import type { ProductViewModel } from '@lib/viewmodels/product';
 
@@ -11,38 +12,46 @@ interface Props {
 }
 
 const { product, locale } = Astro.props;
+const lowStock = product.onlyXLeft !== null && product.onlyXLeft > 0;
 ---
 
 <Breadcrumbs items={product.breadcrumbs} />
 
-<div class="mt-6 grid gap-10 lg:grid-cols-2">
-  <div>
+<div class="mt-5 grid gap-8 lg:grid-cols-[minmax(0,1fr)_25rem] lg:gap-14">
+  {
+    /* The gallery sticks while the buy column scrolls: on a long description
+      the price and the Add to cart button would otherwise be several screens
+      away from the photograph they belong to. */
+  }
+  <div class="mx-auto w-full max-w-[32rem] lg:sticky lg:top-36 lg:mx-0 lg:self-start">
     {/* Visible hydration: the gallery only matters once it is on screen. */}
     <ProductGallery client:visible images={product.gallery} productName={product.name} />
   </div>
 
-  <div class="flex flex-col gap-5">
+  <div class="flex flex-col gap-6">
     <div>
-      <h1 class="text-2xl font-semibold tracking-tight text-ink">{product.name}</h1>
-      <p class="mt-1 text-sm text-ink-muted">SKU: {product.sku}</p>
-      <Rating className="mt-2" percent={product.ratingPercent} reviewCount={product.reviewCount} />
+      <div class="flex flex-wrap items-center gap-2">
+        {product.inStock ? <Badge tone="success">In stock</Badge> : <Badge>Sold out</Badge>}
+        {lowStock && <Badge tone="warning">Only {product.onlyXLeft} left</Badge>}
+      </div>
+
+      <h1 class="mt-3 text-display-sm font-semibold text-ink sm:text-display-md">
+        {product.name}
+      </h1>
+
+      <div class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
+        <Rating percent={product.ratingPercent} reviewCount={product.reviewCount} size="md" />
+        <p class="numeric text-xs text-ink-muted">SKU {product.sku}</p>
+      </div>
     </div>
 
     {
       product.shortDescriptionHtml && (
-        <div
-          class="prose-sm text-sm leading-relaxed text-ink-muted"
-          set:html={product.shortDescriptionHtml}
-        />
+        <div class="prose-cms" set:html={product.shortDescriptionHtml} />
       )
     }
 
-    {
-      product.onlyXLeft !== null && product.onlyXLeft > 0 && (
-        <p class="text-sm font-medium text-sale">Only {product.onlyXLeft} left in stock</p>
-      )
-    }
-
+    {/* Price, variant pickers, quantity and the primary action. */}
     <AddToCartForm
       client:load
       sku={product.sku}
@@ -56,19 +65,24 @@ const { product, locale } = Astro.props;
       percentOff={product.price.percentOff}
       maximum={product.price.maximum}
     />
+
+    <p class="border-t border-line pt-5 text-xs leading-relaxed text-ink-muted">
+      Checkout is completed in Magento. Your cart is kept server-side, so it survives a reload and a
+      closed tab.
+    </p>
   </div>
 </div>
 
 {
   product.descriptionHtml && (
-    <section class="mt-12 max-w-3xl" aria-labelledby="description">
-      <h2 id="description" class="text-lg font-semibold text-ink">
+    <section class="mt-section border-t border-line pt-10" aria-labelledby="description">
+      <h2 id="description" class="text-display-sm font-semibold text-ink">
         Details
       </h2>
-      <div
-        class="mt-3 text-sm leading-relaxed text-ink-muted [&_li]:list-disc [&_ul]:mt-2 [&_ul]:pl-5"
-        set:html={product.descriptionHtml}
-      />
+      {/* Left in the document rather than behind a tab: a description that is
+          display:none on load is still indexed, but a shopper on a phone has
+          to discover the tab to read what they are buying. */}
+      <div class="prose-cms mt-5 max-w-2xl" set:html={product.descriptionHtml} />
     </section>
   )
 }

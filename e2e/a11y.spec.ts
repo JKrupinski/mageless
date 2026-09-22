@@ -12,10 +12,17 @@ async function scan(page: Page) {
 
 const pages: [name: string, path: string][] = [
   ['home', '/'],
-  ['category', '/women/tops-women.html'],
+  ['category listing', '/women/tops-women.html'],
+  // A Category Landing renders Subcategory tiles and a merchandising strip
+  // instead of a listing — different regions, different headings.
+  ['category landing', '/women.html'],
   ['product', '/erika-running-short.html'],
   ['search results', '/search?q=jacket'],
   ['empty cart', '/cart'],
+  // The design system page renders every token pair and control state at
+  // once, so it catches a contrast regression the storefront pages would not
+  // reach until someone happened to view that combination.
+  ['design system', '/design'],
 ];
 
 for (const [name, path] of pages) {

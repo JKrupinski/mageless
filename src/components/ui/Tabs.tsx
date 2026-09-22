@@ -22,7 +22,7 @@ function TabsList({ className, ...props }: ComponentProps<typeof TabsPrimitive.L
     <TabsPrimitive.List
       data-slot="tabs-list"
       className={classNames(
-        'inline-flex h-10 w-fit items-center justify-center gap-1 rounded-[--radius-control] bg-surface-inset p-1',
+        'inline-flex h-10 w-fit items-center justify-center gap-1 rounded-control bg-surface-sunken p-1',
         className,
       )}
       {...props}
@@ -35,7 +35,7 @@ function TabsTrigger({ className, ...props }: ComponentProps<typeof TabsPrimitiv
     <TabsPrimitive.Trigger
       data-slot="tabs-trigger"
       className={classNames(
-        'inline-flex items-center justify-center rounded-[--radius-control] px-3 py-1.5 text-sm font-medium text-ink-muted transition-colors',
+        'inline-flex items-center justify-center rounded-control px-3 py-1.5 text-sm font-medium text-ink-muted transition-colors',
         'data-[state=active]:bg-surface data-[state=active]:text-ink data-[state=active]:shadow-sm',
         'disabled:pointer-events-none disabled:opacity-50',
         className,

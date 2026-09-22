@@ -81,8 +81,13 @@ export const HomeQuery = graphql(
 );
 
 /**
- * Category listing in a single round trip: the category header and the filtered
- * product page come back together, which keeps TTFB down on SSR.
+ * Everything a Category page needs in a single round trip: the header, its
+ * Display Mode and Subcategories, and the filtered product page.
+ *
+ * The Subcategory tree comes back two levels deep. The first level is what a
+ * Category Landing renders as tiles; the second exists only so the landing can
+ * pick a busy descendant to merchandise, since a department's own children are
+ * often Landings too and carry no products a shopper could see.
  */
 export const CategoryPageQuery = graphql(
   `
@@ -98,6 +103,7 @@ export const CategoryPageQuery = graphql(
           uid
           name
           description
+          display_mode
           url_path
           url_suffix
           meta_title
@@ -107,6 +113,22 @@ export const CategoryPageQuery = graphql(
             category_uid
             category_name
             category_url_path
+          }
+          children {
+            uid
+            name
+            url_path
+            url_suffix
+            include_in_menu
+            product_count
+            children {
+              uid
+              name
+              url_path
+              url_suffix
+              include_in_menu
+              product_count
+            }
           }
         }
       }
@@ -127,6 +149,33 @@ export const CategoryPageQuery = graphql(
             count
           }
         }
+        items {
+          ...ProductCard
+        }
+      }
+    }
+  `,
+  [ProductCardFragment],
+);
+
+/**
+ * The products behind a Category Landing's merchandising strip.
+ *
+ * Deliberately a fixed handful with no aggregations, page info or sort: this is
+ * a merchandised row, not a listing. Rolling a Category's descendants up into a
+ * paginated, faceted listing is what an Anchor Category would do, and this
+ * storefront does not (see CONTEXT.md).
+ */
+export const CategoryFeaturedQuery = graphql(
+  `
+    query CategoryFeatured($categoryUid: String!, $pageSize: Int!) {
+      products(
+        filter: { category_uid: { eq: $categoryUid } }
+        pageSize: $pageSize
+        currentPage: 1
+        sort: { position: ASC }
+      ) {
+        total_count
         items {
           ...ProductCard
         }

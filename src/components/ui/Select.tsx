@@ -29,7 +29,9 @@ function SelectTrigger({
     <SelectPrimitive.Trigger
       data-slot="select-trigger"
       className={classNames(
-        'flex h-10 w-full items-center justify-between gap-2 rounded-[--radius-control] border border-border-subtle bg-surface px-3 text-sm text-ink',
+        'flex h-10 w-full cursor-pointer items-center justify-between gap-2 rounded-control',
+        'border border-line-strong bg-surface px-3 text-sm text-ink',
+        'transition-colors duration-150 ease-out-soft hover:border-ink-subtle',
         '[&>span[data-placeholder]]:text-ink-muted',
         'disabled:cursor-not-allowed disabled:opacity-50',
         className,
@@ -86,8 +88,9 @@ function SelectContent({
         data-slot="select-content"
         position={position}
         className={classNames(
-          'z-50 max-h-[--radix-select-content-available-height] min-w-[--radix-select-trigger-width] overflow-hidden',
-          'rounded-[--radius-control] border border-border-subtle bg-surface text-ink shadow-lg',
+          'z-50 max-h-(--radix-select-content-available-height) min-w-(--radix-select-trigger-width) overflow-hidden',
+          'rounded-panel border border-line bg-surface text-ink shadow-lg',
+          'data-[state=open]:animate-scale-in motion-reduce:animate-none',
           position === 'popper' && 'translate-y-1',
           className,
         )}
@@ -120,8 +123,8 @@ function SelectItem({
     <SelectPrimitive.Item
       data-slot="select-item"
       className={classNames(
-        'relative flex w-full cursor-default items-center gap-2 rounded-[--radius-control] py-1.5 pr-8 pl-2 text-sm text-ink select-none',
-        'data-[highlighted]:bg-surface-muted data-[highlighted]:outline-none',
+        'relative flex w-full cursor-default items-center gap-2 rounded-control py-1.5 pr-8 pl-2 text-sm text-ink select-none',
+        'data-[highlighted]:bg-surface-hover data-[highlighted]:outline-none',
         'data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
         className,
       )}
@@ -144,7 +147,7 @@ function SelectSeparator({
   return (
     <SelectPrimitive.Separator
       data-slot="select-separator"
-      className={classNames('-mx-1 my-1 h-px bg-border-subtle', className)}
+      className={classNames('-mx-1 my-1 h-px bg-line', className)}
       {...props}
     />
   );

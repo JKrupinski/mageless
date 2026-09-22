@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useStore } from '@nanostores/react';
+import { ShoppingBag, X } from 'lucide-react';
 import {
   $cart,
   $cartDrawerOpen,
@@ -19,6 +20,9 @@ export interface CartDrawerProps {
   locale?: string;
 }
 
+const FOCUSABLE =
+  'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
 export function CartDrawer({ initialCart, locale = 'en-US' }: CartDrawerProps) {
   hydrateCart(initialCart);
 
@@ -35,8 +39,37 @@ export function CartDrawer({ initialCart, locale = 'en-US' }: CartDrawerProps) {
     panelRef.current?.focus();
 
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') closeCartDrawer();
+      if (event.key === 'Escape') {
+        closeCartDrawer();
+        return;
+      }
+      // `aria-modal` tells assistive technology the rest of the page is inert;
+      // it does nothing to the Tab order. Without this, tabbing walks straight
+      // out of the drawer and into the page behind the scrim (WCAG 2.1.2).
+      if (event.key !== 'Tab' || !panelRef.current) return;
+
+      const focusable = [...panelRef.current.querySelectorAll<HTMLElement>(FOCUSABLE)].filter(
+        (node) => node.offsetParent !== null,
+      );
+      if (focusable.length === 0) {
+        event.preventDefault();
+        panelRef.current.focus();
+        return;
+      }
+
+      const first = focusable[0]!;
+      const last = focusable[focusable.length - 1]!;
+      const active = document.activeElement;
+
+      if (event.shiftKey && (active === first || active === panelRef.current)) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && active === last) {
+        event.preventDefault();
+        first.focus();
+      }
     };
+
     document.addEventListener('keydown', onKeyDown);
     document.body.style.overflow = 'hidden';
 
@@ -62,32 +95,54 @@ export function CartDrawer({ initialCart, locale = 'en-US' }: CartDrawerProps) {
    * renders nothing until it is opened.
    */
   return createPortal(
-    <div className="fixed inset-0 z-40">
-      <div className="absolute inset-0 bg-black/40" onClick={closeCartDrawer} aria-hidden="true" />
+    <div className="fixed inset-0 z-50">
+      <div
+        className="absolute inset-0 bg-scrim animate-fade-in"
+        onClick={closeCartDrawer}
+        aria-hidden="true"
+      />
       <div
         ref={panelRef}
         role="dialog"
         aria-modal="true"
         aria-label="Shopping cart"
         tabIndex={-1}
-        className="absolute inset-y-0 right-0 flex w-full max-w-md flex-col bg-surface shadow-2xl outline-none"
+        className={[
+          'absolute inset-y-0 right-0 flex w-full max-w-md flex-col',
+          'bg-surface shadow-xl outline-none',
+          'animate-slide-in-right motion-reduce:animate-none',
+        ].join(' ')}
       >
-        <header className="flex items-center justify-between border-b border-border-subtle p-4">
-          <h2 className="text-base font-semibold text-ink">
-            Cart <span className="text-ink-muted">({cart.totalQuantity})</span>
+        <header className="flex items-center justify-between gap-4 border-b border-line px-5 py-4">
+          <h2 className="text-sm font-semibold tracking-wide text-ink uppercase">
+            Cart
+            {cart.totalQuantity > 0 && (
+              <span className="numeric ml-2 font-normal text-ink-muted">
+                ({cart.totalQuantity})
+              </span>
+            )}
           </h2>
-          <Button variant="ghost" size="sm" onClick={closeCartDrawer} aria-label="Close cart">
-            ✕
-          </Button>
+          <button
+            type="button"
+            onClick={closeCartDrawer}
+            aria-label="Close cart"
+            className="-mr-2 inline-flex size-9 cursor-pointer items-center justify-center rounded-control text-ink-muted transition-colors hover:bg-surface-hover hover:text-ink"
+          >
+            <X className="size-4.5" aria-hidden="true" />
+          </button>
         </header>
 
-        <div className="flex-1 overflow-y-auto p-4">
+        <div className="flex-1 overflow-y-auto px-5">
           {cart.items.length === 0 ? (
-            <p className="py-12 text-center text-sm text-ink-muted">Your cart is empty.</p>
+            <div className="flex flex-col items-center py-20 text-center">
+              <ShoppingBag className="size-7 text-ink-subtle" aria-hidden="true" />
+              <p className="mt-4 text-sm font-medium text-ink">Your cart is empty</p>
+              <p className="mt-1 text-sm text-ink-muted">Everything you add shows up here.</p>
+            </div>
           ) : (
-            <ul className="flex flex-col gap-4">
+            <ul className="divide-y divide-line">
               {cart.items.map((item) => (
-                <li key={item.uid} className="flex gap-3">
+                <li key={item.uid} className="flex gap-4 py-4">
                   {item.image ? (
                     <img
                       src={item.image}
@@ -95,36 +150,48 @@ export function CartDrawer({ initialCart, locale = 'en-US' }: CartDrawerProps) {
                       width={64}
                       height={80}
                       loading="lazy"
-                      className="h-20 w-16 rounded-[--radius-control] object-cover"
+                      className="h-20 w-16 shrink-0 rounded-control bg-surface-sunken object-cover"
                     />
                   ) : null}
-                  <div className="flex flex-1 flex-col gap-1">
-                    <a href={item.url} className="text-sm font-medium text-ink hover:underline">
+
+                  <div className="flex min-w-0 flex-1 flex-col">
+                    <a
+                      href={item.url}
+                      className="text-sm font-medium text-ink underline-offset-2 hover:underline"
+                    >
                       {item.name}
                     </a>
-                    {item.options.map((option) => (
-                      <span key={option.label} className="text-xs text-ink-muted">
-                        {option.label}: {option.value}
-                      </span>
-                    ))}
-                    <span className="text-xs text-ink-muted">Qty {item.quantity}</span>
+                    <div className="mt-1 flex flex-col gap-0.5">
+                      {item.options.map((option) => (
+                        <span key={option.label} className="text-xs text-ink-muted">
+                          {option.label}: {option.value}
+                        </span>
+                      ))}
+                      <span className="numeric text-xs text-ink-muted">Qty {item.quantity}</span>
+                    </div>
                     {item.unavailableMessage ? (
-                      <span className="text-xs text-danger">{item.unavailableMessage}</span>
+                      <span className="mt-1 text-xs font-medium text-danger">
+                        {item.unavailableMessage}
+                      </span>
                     ) : null}
                   </div>
-                  <div className="flex flex-col items-end gap-2">
-                    <span className="text-sm font-semibold text-ink">
+
+                  <div className="flex shrink-0 flex-col items-end gap-1.5">
+                    <span className="numeric text-sm font-semibold text-ink">
                       {formatMoney(item.rowTotal, locale)}
                     </span>
-                    <Button
-                      variant="danger"
-                      size="sm"
+                    {/* A text link rather than a bordered button: one framed
+                        control per line turns the list into a row of boxes and
+                        competes with the drawer's own primary action. */}
+                    <button
+                      type="button"
                       disabled={status === 'pending'}
                       onClick={() => void removeCartItem(item.uid)}
                       aria-label={`Remove ${item.name} from cart`}
+                      className="cursor-pointer text-xs text-ink-muted underline-offset-2 transition-colors hover:text-danger hover:underline disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       Remove
-                    </Button>
+                    </button>
                   </div>
                 </li>
               ))}
@@ -132,22 +199,36 @@ export function CartDrawer({ initialCart, locale = 'en-US' }: CartDrawerProps) {
           )}
         </div>
 
-        <footer className="border-t border-border-subtle p-4">
-          <p className="mb-3 flex items-center justify-between text-sm">
-            <span className="text-ink-muted">Subtotal</span>
-            <span className="text-base font-semibold text-ink">
-              {formatMoney(cart.grandTotal, locale)}
-            </span>
-          </p>
-          <Button
-            fullWidth
-            onClick={() => {
-              window.location.href = '/cart';
-            }}
-          >
-            View cart
-          </Button>
-        </footer>
+        {cart.items.length > 0 && (
+          <footer className="border-t border-line px-5 py-4">
+            <p className="flex items-baseline justify-between gap-4">
+              <span className="text-sm text-ink-muted">Subtotal</span>
+              <span className="numeric text-lg font-semibold text-ink">
+                {formatMoney(cart.grandTotal, locale)}
+              </span>
+            </p>
+            <p className="mt-1 text-xs text-ink-muted">
+              Shipping and taxes are calculated at checkout.
+            </p>
+            <Button
+              fullWidth
+              size="lg"
+              className="mt-4"
+              onClick={() => {
+                window.location.href = '/cart';
+              }}
+            >
+              View cart
+            </Button>
+            <button
+              type="button"
+              onClick={closeCartDrawer}
+              className="mt-2 w-full cursor-pointer py-2 text-sm text-ink-muted transition-colors hover:text-ink"
+            >
+              Continue shopping
+            </button>
+          </footer>
+        )}
       </div>
     </div>,
     document.body,

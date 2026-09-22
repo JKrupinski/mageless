@@ -6,29 +6,41 @@ interface Crumb {
 
 interface Props {
   items: Crumb[];
+  class?: string;
 }
 
-const { items } = Astro.props;
+const { items, class: className = '' } = Astro.props;
 ---
 
 {
   items.length > 0 && (
-    <nav aria-label="Breadcrumb" class="text-sm">
-      <ol class="flex flex-wrap items-center gap-1.5 text-ink-muted">
-        <li>
-          <a href="/" class="hover:text-ink">
+    <nav aria-label="Breadcrumb" class={className}>
+      {/* Horizontally scrollable so a deep path never wraps to three lines on
+          a phone or pushes the page into a horizontal scroll. */}
+      <ol class="hide-scrollbar flex items-center gap-1 overflow-x-auto text-xs whitespace-nowrap text-ink-muted">
+        <li class="shrink-0">
+          <a href="/" class="rounded-[2px] transition-colors hover:text-ink">
             Home
           </a>
         </li>
         {items.map((item, index) => (
-          <li class="flex items-center gap-1.5">
-            <span aria-hidden="true">/</span>
+          <li class="flex shrink-0 items-center gap-1">
+            <svg viewBox="0 0 16 16" class="size-3 shrink-0 text-ink-subtle" aria-hidden="true">
+              <path
+                d="M6 3.5L10.5 8 6 12.5"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
             {index === items.length - 1 ? (
-              <span aria-current="page" class="text-ink">
+              <span aria-current="page" class="font-medium text-ink">
                 {item.name}
               </span>
             ) : (
-              <a href={item.href} class="hover:text-ink">
+              <a href={item.href} class="rounded-[2px] transition-colors hover:text-ink">
                 {item.name}
               </a>
             )}

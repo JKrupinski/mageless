@@ -18,6 +18,12 @@ export interface ProductCardProps {
   className?: string;
 }
 
+/**
+ * Deliberately borderless and shadowless. A grid of framed cards puts a box
+ * around every photograph and makes forty products read as forty containers;
+ * letting the image sit on a tinted pad keeps the merchandise as the only
+ * thing with edges. Separation comes from the grid gap instead.
+ */
 export function ProductCard({
   product,
   locale = 'en-US',
@@ -27,56 +33,65 @@ export function ProductCard({
   const price = product.price_range.minimum_price;
   const outOfStock = product.stock_status === 'OUT_OF_STOCK';
   const href = productUrl(product);
+  const percentOff = price.discount?.percent_off;
 
   return (
-    <article
-      className={classNames(
-        'group relative flex h-full flex-col overflow-hidden rounded-[--radius-card]',
-        'border border-border-subtle bg-surface transition-shadow duration-200 ease-[--ease-out-soft]',
-        'hover:shadow-lg hover:shadow-black/5',
-        className,
-      )}
-    >
-      <div className="relative aspect-[3/4] overflow-hidden bg-surface-muted">
-        {product.small_image?.url ? (
-          <img
-            src={product.small_image.url}
-            alt={product.small_image.label ?? product.name ?? ''}
-            width={360}
-            height={480}
-            loading={priority ? 'eager' : 'lazy'}
-            fetchPriority={priority ? 'high' : 'auto'}
-            decoding={priority ? 'sync' : 'async'}
-            className="size-full object-cover transition-transform duration-300 ease-[--ease-out-soft] group-hover:scale-[1.03]"
-          />
-        ) : (
-          <div className="size-full bg-surface-inset" aria-hidden="true" />
-        )}
+    <article className={classNames('group relative flex h-full flex-col', className)}>
+      <div className="relative overflow-hidden rounded-card bg-surface-sunken">
+        <div className="aspect-4/5">
+          {product.small_image?.url ? (
+            <img
+              src={product.small_image.url}
+              alt={product.small_image.label ?? product.name ?? ''}
+              width={360}
+              height={450}
+              loading={priority ? 'eager' : 'lazy'}
+              fetchPriority={priority ? 'high' : 'auto'}
+              decoding={priority ? 'sync' : 'async'}
+              className={classNames(
+                'size-full object-cover',
+                'transition-transform duration-500 ease-out-soft group-hover:scale-[1.04]',
+                'motion-reduce:transition-none motion-reduce:group-hover:scale-100',
+                outOfStock && 'opacity-55',
+              )}
+            />
+          ) : (
+            <div
+              className="flex size-full items-center justify-center text-xs text-ink-muted"
+              aria-hidden="true"
+            >
+              No image
+            </div>
+          )}
+        </div>
 
-        <div className="absolute top-2 left-2 flex flex-col gap-1">
-          {price.discount?.percent_off ? (
-            <Badge tone="sale">−{Math.round(price.discount.percent_off)}%</Badge>
-          ) : null}
-          {outOfStock ? <Badge tone="neutral">Out of stock</Badge> : null}
+        <div className="pointer-events-none absolute top-2 left-2 flex flex-col items-start gap-1">
+          {percentOff ? <Badge tone="sale">−{Math.round(percentOff)}%</Badge> : null}
+          {outOfStock ? <Badge tone="neutral">Sold out</Badge> : null}
         </div>
       </div>
 
-      <div className="flex flex-1 flex-col gap-2 p-4">
-        <h3 className="text-sm font-medium text-ink">
+      <div className="flex flex-1 flex-col gap-1.5 pt-3">
+        <h3 className="text-sm leading-snug font-medium text-ink">
           {/* The stretched pseudo-element makes the whole card clickable while
               keeping a single, correctly-labelled link for screen readers. */}
-          <a href={href} className="after:absolute after:inset-0 after:content-['']">
+          <a
+            href={href}
+            className="line-clamp-2 decoration-1 underline-offset-2 after:absolute after:inset-0 after:content-[''] group-hover:underline"
+          >
             {product.name}
           </a>
         </h3>
 
-        <Rating percent={product.rating_summary} reviewCount={product.review_count} />
+        {product.rating_summary ? (
+          <Rating percent={product.rating_summary} reviewCount={product.review_count} />
+        ) : null}
 
         <Price
-          className="mt-auto"
+          className="mt-auto pt-0.5"
           final={price.final_price}
           regular={price.regular_price}
-          percentOff={price.discount?.percent_off}
+          percentOff={percentOff}
           maximum={product.price_range.maximum_price?.final_price}
           locale={locale}
         />

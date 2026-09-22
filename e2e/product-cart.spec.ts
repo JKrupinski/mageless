@@ -70,6 +70,9 @@ test.describe('product page and cart', () => {
     await expect(page.getByRole('button', { name: /Open cart, 2 items/ })).toBeVisible();
 
     await page.getByRole('button', { name: /Remove Joust Duffle Bag/ }).click();
-    await expect(page.getByText('Your cart is empty.')).toBeVisible();
+    await expect(page.getByText('Your cart is empty')).toBeVisible();
+    // An empty state that offers no way out is a dead end, so the route back
+    // is part of the contract, not decoration.
+    await expect(page.getByRole('link', { name: 'Continue shopping' })).toBeVisible();
   });
 });

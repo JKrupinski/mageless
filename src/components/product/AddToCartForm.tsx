@@ -188,12 +188,12 @@ export function AddToCartForm({
                 <label
                   key={value.uid}
                   className={classNames(
-                    'relative cursor-pointer rounded-[--radius-control] border px-3 py-2 text-sm transition-colors',
+                    'relative cursor-pointer rounded-control border px-3 py-2 text-sm transition-colors',
                     isSelected
-                      ? 'border-brand-600 bg-brand-50 text-brand-800'
-                      : 'border-border-subtle text-ink hover:bg-surface-muted',
+                      ? 'border-accent bg-accent-soft text-accent-text'
+                      : 'border-line text-ink hover:bg-surface-hover',
                     !isReachable && 'cursor-not-allowed opacity-40 line-through',
-                    'has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-brand-600',
+                    'has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-ring',
                   )}
                 >
                   <input
@@ -217,7 +217,7 @@ export function AddToCartForm({
                       <span
                         aria-hidden="true"
                         style={{ backgroundColor: value.swatch }}
-                        className="size-4 rounded-full border border-border-subtle"
+                        className="size-4 rounded-full border border-line"
                       />
                       {value.label}
                     </span>
@@ -239,6 +239,7 @@ export function AddToCartForm({
         />
         <Button
           type="submit"
+          variant="accent"
           size="lg"
           loading={status === 'pending'}
           disabled={!purchasable || missingSelection}

@@ -54,13 +54,27 @@ const sortHref = (value: string) => {
   noindex
   searchTerm={term}
 >
-  <h1 class="text-2xl font-semibold tracking-tight text-ink">
-    {term ? <>Results for “{term}”</> : 'Search'}
-  </h1>
+  <header class="border-b border-line pb-6">
+    <p class="text-xs font-semibold tracking-[0.14em] text-accent-text uppercase">Search</p>
+    <h1 class="mt-3 text-display-md font-semibold text-ink">
+      {term ? <>Results for “{term}”</> : 'Search the catalogue'}
+    </h1>
+    {
+      !term && (
+        <p class="mt-3 max-w-xl text-sm text-ink-muted">
+          Type in the field at the top of the page. Suggestions appear as you type, and Enter opens
+          the full result list.
+        </p>
+      )
+    }
+  </header>
 
   {
     !parsed.success && rawTerm.length > 0 && (
-      <p role="alert" class="mt-3 text-sm text-danger">
+      <p
+        role="alert"
+        class="mt-4 rounded-control bg-danger-soft px-3 py-2 text-sm font-medium text-danger"
+      >
         {parsed.error.issues[0]?.message}
       </p>
     )
@@ -69,36 +83,37 @@ const sortHref = (value: string) => {
   {
     term && (
       <>
-        <div class="mt-4 flex flex-wrap items-center justify-between gap-3 border-b border-border-subtle pb-3">
-          <p class="text-sm text-ink-muted" aria-live="polite">
-            {totalCount} {totalCount === 1 ? 'product' : 'products'}
+        <div class="mt-6 flex flex-wrap items-center justify-between gap-x-6 gap-y-3 border-b border-line pb-3">
+          <p class="numeric text-sm text-ink-muted" aria-live="polite">
+            <span class="font-medium text-ink">{totalCount}</span>
+            {totalCount === 1 ? ' product' : ' products'}
           </p>
-          <nav aria-label="Sort by" class="flex flex-wrap items-center gap-1 text-sm">
-            <span class="mr-1 text-ink-muted">Sort:</span>
-            <a
-              href={sortHref('relevance')}
-              aria-current={sort === 'relevance' ? 'true' : undefined}
-              class="rounded-[--radius-control] px-2 py-1 text-ink-muted hover:bg-surface-muted aria-[current]:font-semibold aria-[current]:text-brand-700"
-            >
-              Relevance
-            </a>
-            {SORT_OPTIONS.filter((option) => option.value !== 'position').map((option) => (
-              <a
-                href={sortHref(option.value)}
-                aria-current={sort === option.value ? 'true' : undefined}
-                class="rounded-[--radius-control] px-2 py-1 text-ink-muted hover:bg-surface-muted aria-[current]:font-semibold aria-[current]:text-brand-700"
-              >
-                {option.label}
-              </a>
-            ))}
+          <nav aria-label="Sort by" class="-mx-1 flex min-w-0 items-center gap-1">
+            <span class="shrink-0 px-1 text-sm text-ink-muted">Sort</span>
+            <span class="hide-scrollbar flex gap-1 overflow-x-auto">
+              {[
+                { value: 'relevance', label: 'Relevance' },
+                ...SORT_OPTIONS.filter((option) => option.value !== 'position'),
+              ].map((option) => (
+                <a
+                  href={sortHref(option.value)}
+                  rel="nofollow"
+                  aria-current={sort === option.value ? 'true' : undefined}
+                  class="inline-flex h-8 shrink-0 items-center rounded-control px-2.5 text-sm whitespace-nowrap text-ink-muted transition-colors hover:bg-surface-hover hover:text-ink aria-[current]:bg-ink aria-[current]:text-on-ink"
+                >
+                  {option.label}
+                </a>
+              ))}
+            </span>
           </nav>
         </div>
 
         <ProductGrid
-          className="mt-6"
+          className="mt-8"
           products={result?.products?.items ?? []}
           locale={store.locale}
-          emptyMessage={`Nothing matched “${term}”. Try a different word.`}
+          emptyMessage={`Nothing matched “${term}”`}
+          emptyAction={{ label: 'Browse the storefront', href: '/' }}
         />
 
         <Pagination currentPage={currentPage} totalPages={totalPages} buildHref={buildHref} />
