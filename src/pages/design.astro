@@ -1,0 +1,427 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Logo from '@/components/brand/Logo.astro';
+
+/**
+ * Living documentation for the token contract.
+ *
+ * Everything here is rendered from the same variables the storefront uses, so
+ * the page cannot go stale: change a token and this page changes with it. The
+ * dial sliders and skin switcher write to `document.documentElement`, which is
+ * exactly what an adopter would do permanently in tokens.css.
+ */
+
+const COLOR_GROUPS = [
+  {
+    title: 'Surfaces',
+    note: 'Lightest to deepest. Anything that holds content sits on one of these.',
+    tokens: ['canvas', 'surface', 'surface-sunken', 'surface-hover'],
+  },
+  {
+    title: 'Ink',
+    note: 'Text, and the fills that carry text of the opposite polarity.',
+    tokens: ['ink', 'ink-hover', 'ink-muted', 'ink-subtle', 'on-ink'],
+  },
+  {
+    title: 'Lines',
+    note: 'line separates, line-strong bounds a control and must clear 3:1.',
+    tokens: ['line', 'line-strong'],
+  },
+  {
+    title: 'Accent',
+    note: 'Links, focus, active state and the single conversion action.',
+    tokens: ['accent', 'accent-hover', 'accent-active', 'accent-text', 'accent-soft', 'on-accent'],
+  },
+  {
+    title: 'Status',
+    note: 'Each pairs a text weight with a -soft background weight.',
+    tokens: [
+      'success',
+      'success-soft',
+      'danger',
+      'danger-soft',
+      'warning',
+      'warning-soft',
+      'sale',
+      'sale-soft',
+      'rating',
+    ],
+  },
+] as const;
+
+const TYPE_SCALE = [
+  { cls: 'text-display-xl', label: 'display-xl', sample: 'Storefront' },
+  { cls: 'text-display-lg', label: 'display-lg', sample: 'Storefront' },
+  { cls: 'text-display-md', label: 'display-md', sample: 'Category heading' },
+  { cls: 'text-display-sm', label: 'display-sm', sample: 'Section heading' },
+  { cls: 'text-base', label: 'base', sample: 'Body copy at the default size.' },
+  { cls: 'text-sm', label: 'sm', sample: 'Product names, labels, most UI text.' },
+  { cls: 'text-xs', label: 'xs', sample: 'Counts, meta, legal.' },
+] as const;
+
+const SKINS = [
+  { value: '', label: 'Noir', hint: 'default' },
+  { value: 'warm', label: 'Warm', hint: 'sand + terracotta' },
+  { value: 'mono', label: 'Mono', hint: 'no hue at all' },
+] as const;
+
+const DIALS = [
+  { name: '--dial-radius', label: 'Radius', min: 0, max: 3, step: 0.25, value: 1 },
+  { name: '--dial-shadow', label: 'Shadow', min: 0, max: 2, step: 0.05, value: 0.55 },
+  { name: '--dial-rhythm', label: 'Rhythm', min: 1, max: 2, step: 0.05, value: 1.25 },
+] as const;
+---
+
+<BaseLayout
+  title="Design system"
+  description="The token contract this storefront is built on."
+  noindex
+>
+  <header class="border-b border-line pb-10">
+    <Logo tagline="Design system" />
+    <h1 class="mt-6 max-w-3xl text-display-lg font-semibold text-ink">One contract, any brand</h1>
+    <p class="mt-5 max-w-2xl text-base leading-relaxed text-ink-muted">
+      Components reference role names — <code
+        class="rounded-control bg-surface-sunken px-1.5 py-0.5 text-[0.9em]">bg-surface</code
+      >,
+      <code class="rounded-control bg-surface-sunken px-1.5 py-0.5 text-[0.9em]"
+        >text-ink-muted</code
+      >,
+      <code class="rounded-control bg-surface-sunken px-1.5 py-0.5 text-[0.9em]">rounded-card</code> —
+      never a colour or a pixel value. Re-skinning is therefore editing one file. Change anything below
+      and watch the whole page follow.
+    </p>
+  </header>
+
+  <!-- Skins ------------------------------------------------------------- -->
+  <section class="mt-section" aria-labelledby="skins">
+    <h2 id="skins" class="text-display-sm font-semibold text-ink">Skins</h2>
+    <p class="mt-2 max-w-2xl text-sm text-ink-muted">
+      Three complete themes from <code class="text-accent-text">src/styles/skins.css</code>. Each
+      redefines only the skin layer and the dials — no component knows they exist.
+    </p>
+
+    <div class="mt-6 flex flex-wrap gap-2" role="group" aria-label="Preview skin">
+      {
+        SKINS.map((skin) => (
+          <button
+            type="button"
+            data-skin-option={skin.value}
+            aria-pressed={skin.value === '' ? 'true' : 'false'}
+            class="group inline-flex cursor-pointer flex-col items-start gap-0.5 rounded-card border border-line px-4 py-2.5 text-left transition-colors hover:bg-surface-hover aria-pressed:border-ink aria-pressed:bg-ink aria-pressed:text-on-ink"
+          >
+            <span class="text-sm font-medium">{skin.label}</span>
+            <span class="text-xs text-ink-muted group-aria-pressed:text-on-ink/70">
+              {skin.hint}
+            </span>
+          </button>
+        ))
+      }
+    </div>
+  </section>
+
+  <!-- Dials ------------------------------------------------------------- -->
+  <section class="mt-section" aria-labelledby="dials">
+    <h2 id="dials" class="text-display-sm font-semibold text-ink">Dials</h2>
+    <p class="mt-2 max-w-2xl text-sm text-ink-muted">
+      Three numbers that move the entire system at once. These sliders write the same custom
+      properties you would set permanently in <code class="text-accent-text">tokens.css</code>.
+    </p>
+
+    <div class="mt-6 grid gap-6 sm:grid-cols-3">
+      {
+        DIALS.map((dial) => (
+          <div class="rounded-card border border-line p-4">
+            <label class="flex items-baseline justify-between gap-2 text-sm font-medium text-ink">
+              {dial.label}
+              <output data-dial-output={dial.name} class="numeric text-xs text-ink-muted">
+                {dial.value}
+              </output>
+              <input
+                type="range"
+                class="mt-3 w-full accent-[var(--accent)]"
+                data-dial={dial.name}
+                min={dial.min}
+                max={dial.max}
+                step={dial.step}
+                value={dial.value}
+              />
+            </label>
+          </div>
+        ))
+      }
+    </div>
+  </section>
+
+  <!-- Colour ------------------------------------------------------------ -->
+  <section class="mt-section" aria-labelledby="colour">
+    <h2 id="colour" class="text-display-sm font-semibold text-ink">Colour roles</h2>
+    <p class="mt-2 max-w-2xl text-sm text-ink-muted">
+      Contrast ratios are measured in your browser against the surface each token actually sits on,
+      under the skin and theme currently applied — so they stay honest when you change one.
+    </p>
+
+    {
+      COLOR_GROUPS.map((group) => (
+        <div class="mt-8">
+          <h3 class="text-sm font-semibold text-ink">{group.title}</h3>
+          <p class="mt-1 text-sm text-ink-muted">{group.note}</p>
+          <ul class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+            {group.tokens.map((token) => (
+              <li class="overflow-hidden rounded-card border border-line">
+                <div
+                  class="h-14 w-full border-b border-line"
+                  style={`background-color: var(--${token})`}
+                  data-swatch={token}
+                />
+                <div class="flex items-baseline justify-between gap-2 bg-surface px-3 py-2">
+                  <code class="text-xs text-ink">{token}</code>
+                  <span
+                    class="numeric text-[0.6875rem] text-ink-muted"
+                    data-contrast={token}
+                    aria-hidden="true"
+                  />
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))
+    }
+  </section>
+
+  <!-- Typography -------------------------------------------------------- -->
+  <section class="mt-section" aria-labelledby="type">
+    <h2 id="type" class="text-display-sm font-semibold text-ink">Typography</h2>
+    <p class="mt-2 max-w-2xl text-sm text-ink-muted">
+      Inter, with tightening applied as the size grows — large type needs negative tracking to hold
+      together, body text does not.
+    </p>
+    <dl class="mt-6 divide-y divide-line border-y border-line">
+      {
+        TYPE_SCALE.map((row) => (
+          <div class="flex flex-col gap-1 py-4 sm:flex-row sm:items-baseline sm:gap-8">
+            <dt class="w-32 shrink-0">
+              <code class="text-xs text-ink-muted">{row.label}</code>
+            </dt>
+            <dd class={`min-w-0 truncate font-semibold text-ink ${row.cls}`}>{row.sample}</dd>
+          </div>
+        ))
+      }
+    </dl>
+  </section>
+
+  <!-- Shape & depth ----------------------------------------------------- -->
+  <section class="mt-section" aria-labelledby="shape">
+    <h2 id="shape" class="text-display-sm font-semibold text-ink">Shape and depth</h2>
+    <div class="mt-6 grid gap-8 sm:grid-cols-2">
+      <div>
+        <h3 class="text-sm font-semibold text-ink">Radius</h3>
+        <div class="mt-4 flex flex-wrap gap-3">
+          {
+            ['rounded-sm', 'rounded-control', 'rounded-card', 'rounded-panel', 'rounded-2xl'].map(
+              (radius) => (
+                <div class="text-center">
+                  <div class={`size-16 border border-line-strong bg-surface-sunken ${radius}`} />
+                  <code class="mt-2 block text-[0.6875rem] text-ink-muted">{radius}</code>
+                </div>
+              ),
+            )
+          }
+        </div>
+      </div>
+      <div>
+        <h3 class="text-sm font-semibold text-ink">Shadow</h3>
+        <div class="mt-4 flex flex-wrap gap-4">
+          {
+            ['shadow-sm', 'shadow-md', 'shadow-lg', 'shadow-xl'].map((shadow) => (
+              <div class="text-center">
+                <div class={`size-16 rounded-card bg-surface ${shadow}`} />
+                <code class="mt-2 block text-[0.6875rem] text-ink-muted">{shadow}</code>
+              </div>
+            ))
+          }
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Controls ---------------------------------------------------------- -->
+  <section class="mt-section" aria-labelledby="controls">
+    <h2 id="controls" class="text-display-sm font-semibold text-ink">Controls</h2>
+    <p class="mt-2 max-w-2xl text-sm text-ink-muted">
+      <strong class="font-medium text-ink">primary</strong> is ink, not accent. The accent is reserved
+      for the one conversion action on a page, which is what keeps it meaning something.
+    </p>
+
+    <div class="mt-6 flex flex-wrap items-center gap-3 rounded-panel border border-line p-6">
+      <button
+        class="inline-flex h-10 cursor-pointer items-center rounded-control bg-ink px-4 text-sm font-medium text-on-ink transition-colors hover:bg-ink-hover"
+      >
+        Primary
+      </button>
+      <button
+        class="inline-flex h-10 cursor-pointer items-center rounded-control bg-accent px-4 text-sm font-medium text-on-accent transition-colors hover:bg-accent-hover"
+      >
+        Add to cart
+      </button>
+      <button
+        class="inline-flex h-10 cursor-pointer items-center rounded-control border border-line-strong bg-surface px-4 text-sm font-medium text-ink transition-colors hover:bg-surface-hover"
+      >
+        Secondary
+      </button>
+      <button
+        class="inline-flex h-10 cursor-pointer items-center rounded-control px-4 text-sm font-medium text-ink transition-colors hover:bg-surface-hover"
+      >
+        Ghost
+      </button>
+      <button
+        disabled
+        class="inline-flex h-10 items-center rounded-control bg-ink px-4 text-sm font-medium text-on-ink opacity-45"
+      >
+        Disabled
+      </button>
+    </div>
+
+    <div class="mt-4 flex flex-wrap items-center gap-2 rounded-panel border border-line p-6">
+      <span
+        class="inline-flex items-center rounded-control bg-surface-sunken px-2 py-0.5 text-[0.6875rem] font-semibold tracking-wide text-ink-muted uppercase"
+        >Neutral</span
+      >
+      <span
+        class="inline-flex items-center rounded-control bg-success-soft px-2 py-0.5 text-[0.6875rem] font-semibold tracking-wide text-success uppercase"
+        >In stock</span
+      >
+      <span
+        class="inline-flex items-center rounded-control bg-sale px-2 py-0.5 text-[0.6875rem] font-semibold tracking-wide text-on-ink uppercase"
+        >−20%</span
+      >
+      <span
+        class="inline-flex items-center rounded-control bg-warning-soft px-2 py-0.5 text-[0.6875rem] font-semibold tracking-wide text-warning uppercase"
+        >Only 3 left</span
+      >
+      <span
+        class="inline-flex items-center rounded-control bg-danger-soft px-2 py-0.5 text-[0.6875rem] font-semibold tracking-wide text-danger uppercase"
+        >Sold out</span
+      >
+    </div>
+  </section>
+
+  <script is:inline>
+    (() => {
+      const root = document.documentElement;
+
+      /* Skin switcher ------------------------------------------------- */
+      const skinButtons = document.querySelectorAll('[data-skin-option]');
+      for (const button of skinButtons) {
+        button.addEventListener('click', () => {
+          const value = button.getAttribute('data-skin-option');
+          if (value) root.setAttribute('data-skin', value);
+          else root.removeAttribute('data-skin');
+          for (const other of skinButtons) {
+            other.setAttribute('aria-pressed', String(other === button));
+          }
+          // The skin changes the dial defaults, so the read-outs must re-run.
+          requestAnimationFrame(measure);
+        });
+      }
+
+      /* Dials ---------------------------------------------------------- */
+      for (const slider of document.querySelectorAll('[data-dial]')) {
+        const name = slider.getAttribute('data-dial');
+        const output = document.querySelector(`[data-dial-output="${name}"]`);
+        slider.addEventListener('input', () => {
+          root.style.setProperty(name, slider.value);
+          if (output) output.textContent = slider.value;
+        });
+      }
+
+      /* Live contrast -------------------------------------------------- */
+      // Canvas resolves any CSS colour syntax — oklch included — to sRGB
+      // without this page having to parse colour spaces itself.
+      const canvas = document.createElement('canvas');
+      canvas.width = canvas.height = 1;
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+
+      function toRgb(color) {
+        if (!ctx) return null;
+        ctx.clearRect(0, 0, 1, 1);
+        ctx.fillStyle = '#000';
+        ctx.fillStyle = color;
+        ctx.fillRect(0, 0, 1, 1);
+        const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
+        return [r, g, b];
+      }
+
+      function luminance([r, g, b]) {
+        const channel = (value) => {
+          const v = value / 255;
+          return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
+        };
+        return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b);
+      }
+
+      function ratio(a, b) {
+        const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+        return (hi + 0.05) / (lo + 0.05);
+      }
+
+      // Which surface each token is actually read against. A token used as a
+      // background is measured the other way round, against the ink on it.
+      const AGAINST = {
+        ink: 'surface',
+        'ink-hover': 'surface',
+        'ink-muted': 'surface',
+        'ink-subtle': 'surface',
+        'on-ink': 'ink',
+        line: 'surface',
+        'line-strong': 'surface',
+        accent: 'on-accent',
+        'accent-hover': 'on-accent',
+        'accent-active': 'on-accent',
+        'accent-text': 'surface',
+        'accent-soft': 'accent-text',
+        'on-accent': 'accent',
+        success: 'surface',
+        'success-soft': 'success',
+        danger: 'surface',
+        'danger-soft': 'danger',
+        warning: 'surface',
+        'warning-soft': 'warning',
+        sale: 'on-ink',
+        // Meaningful graphics, so the floor is 3:1 rather than 4.5:1.
+        rating: 'surface',
+        'sale-soft': 'sale',
+        surface: 'ink',
+        canvas: 'ink',
+        'surface-sunken': 'ink',
+        'surface-hover': 'ink',
+      };
+
+      function measure() {
+        const styles = getComputedStyle(root);
+        for (const node of document.querySelectorAll('[data-contrast]')) {
+          const token = node.getAttribute('data-contrast');
+          const partner = AGAINST[token];
+          if (!partner) continue;
+          const a = toRgb(styles.getPropertyValue(`--${token}`).trim());
+          const b = toRgb(styles.getPropertyValue(`--${partner}`).trim());
+          if (!a || !b) continue;
+          const value = ratio(a, b);
+          node.textContent = `${value.toFixed(1)}:1`;
+          node.title = `Against --${partner}`;
+        }
+      }
+
+      measure();
+      // The theme toggle and the OS preference both change the values.
+      new MutationObserver(() => requestAnimationFrame(measure)).observe(root, {
+        attributes: true,
+        attributeFilter: ['data-theme', 'data-skin'],
+      });
+      matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () =>
+        requestAnimationFrame(measure),
+      );
+    })();
+  </script>
+</BaseLayout>

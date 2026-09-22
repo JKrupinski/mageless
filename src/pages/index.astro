@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
-import { ProductGrid } from '@/components/product/ProductGrid';
+import CategoryTiles from '@/components/catalog/CategoryTiles.astro';
+import FeaturedStrip from '@/components/catalog/FeaturedStrip.astro';
 import { execute } from '@lib/graphql/client';
 import { HomeQuery } from '@lib/graphql/queries/catalog';
 import { getNavigation, getStoreConfig } from '@lib/catalog';
@@ -22,9 +23,19 @@ const data = await execute(HomeQuery, {
 });
 
 const categories = (data.categories?.items ?? []).flatMap((category) =>
-  category ? [category] : [],
+  category
+    ? [
+        {
+          uid: category.uid,
+          name: category.name ?? '',
+          href: `/${category.url_path ?? ''}${category.url_suffix ?? ''}`,
+          productCount: category.product_count ?? null,
+        },
+      ]
+    : [],
 );
 const siteUrl = Astro.site?.toString() ?? Astro.url.origin;
+const totalProducts = categories.reduce((sum, c) => sum + (c.productCount ?? 0), 0);
 ---
 
 <BaseLayout
@@ -32,55 +43,76 @@ const siteUrl = Astro.site?.toString() ?? Astro.url.origin;
   description={store.defaultDescription || `Shop ${store.storeName}`}
   jsonLd={[websiteJsonLd(siteUrl.replace(/\/$/, ''), store.storeName)]}
 >
-  <section class="rounded-[--radius-card] bg-brand-600 px-6 py-14 text-center text-white">
-    <h1 class="text-3xl font-semibold tracking-tight sm:text-4xl">{store.storeName}</h1>
-    <p class="mx-auto mt-3 max-w-xl text-brand-50">
-      A server-rendered storefront on top of Magento GraphQL — catalogue, faceted search and cart,
-      with React islands only where interaction demands them.
+  {
+    /* An editorial masthead rather than a coloured hero panel. A full-bleed
+      brand block is a wall of one colour before a shopper has seen a single
+      product; setting the name in large type and letting the catalogue start
+      immediately below puts the merchandise first, which is the whole point
+      of a storefront. */
+  }
+  <section class="border-b border-line pb-10">
+    <p class="text-xs font-semibold tracking-[0.14em] text-accent-text uppercase">
+      {navigation.length > 0 ? `${navigation.length} departments` : 'Now open'}
     </p>
-  </section>
-
-  <section class="mt-12" aria-labelledby="shop-by-category">
-    <h2 id="shop-by-category" class="text-lg font-semibold text-ink">Shop by category</h2>
-    <ul class="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+    <h1 class="mt-4 max-w-4xl text-display-lg font-semibold text-ink sm:text-display-xl">
+      {store.storeName}
+    </h1>
+    <div class="mt-6 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+      <p class="max-w-xl text-base leading-relaxed text-ink-muted">
+        {
+          store.defaultDescription ||
+            'A server-rendered catalogue on Magento GraphQL — faceted browsing, instant search and a cart that survives a reload.'
+        }
+      </p>
       {
-        categories.map((category) => (
-          <li>
-            <a
-              href={`/${category.url_path ?? ''}${category.url_suffix ?? ''}`}
-              class="flex h-full flex-col justify-between rounded-[--radius-card] border border-border-subtle p-4 transition-colors hover:border-brand-500 hover:bg-surface-muted"
-            >
-              <span class="font-medium text-ink">{category.name}</span>
-              <span class="mt-2 text-xs text-ink-muted">{category.product_count} products</span>
-            </a>
-          </li>
-        ))
+        featuredCategory && (
+          <a
+            href={featuredCategory.href}
+            class="inline-flex h-12 shrink-0 items-center gap-2 rounded-control bg-ink px-6 text-sm font-medium text-on-ink transition-colors hover:bg-ink-hover"
+          >
+            Shop {featuredCategory.name}
+            <svg viewBox="0 0 16 16" class="size-4" aria-hidden="true">
+              <path
+                d="M3 8h10M9 4l4 4-4 4"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.75"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </a>
+        )
       }
-    </ul>
+    </div>
   </section>
 
   {
-    featuredCategory && (
-      <section class="mt-12" aria-labelledby="featured">
-        <div class="flex items-baseline justify-between">
-          <h2 id="featured" class="text-lg font-semibold text-ink">
-            {featuredCategory.name}
+    categories.length > 0 && (
+      <section class="mt-section" aria-labelledby="shop-by-category">
+        <div class="flex items-baseline justify-between gap-4">
+          <h2 id="shop-by-category" class="text-display-sm font-semibold text-ink">
+            Shop by category
           </h2>
-          <a
-            href={featuredCategory.href}
-            class="text-sm font-medium text-brand-700 hover:underline"
-          >
-            View all {data.products?.total_count ?? 0}
-          </a>
+          {totalProducts > 0 && (
+            <p class="numeric text-sm text-ink-muted">{totalProducts} products</p>
+          )}
         </div>
-        {/* Rendered on the server with zero client JavaScript. */}
-        <ProductGrid
-          className="mt-4"
-          products={data.products?.items ?? []}
-          locale={store.locale}
-          priorityCount={4}
-        />
+
+        <CategoryTiles class="mt-6" categories={categories} columns={6} />
       </section>
+    )
+  }
+
+  {
+    featuredCategory && (
+      <FeaturedStrip
+        name={featuredCategory.name}
+        href={featuredCategory.href}
+        totalCount={data.products?.total_count ?? 0}
+        products={data.products?.items ?? []}
+        locale={store.locale}
+      />
     )
   }
 </BaseLayout>

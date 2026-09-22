@@ -1,4 +1,11 @@
-# Headless storefront for Magento 2
+# Mageless
+
+**A headless storefront for Magento 2.**
+
+The name is the joke made literal: this is the storefront without the head. Magento keeps
+the catalogue, the prices, the cart and the checkout; Mageless renders all of it and none
+of the PHP. It is a template, meant to be adopted and re-skinned — see
+[Design system](#design-system).
 
 A server-rendered storefront that talks to a Magento 2 (Mage-OS 3 / 2.4.9) backend over
 GraphQL. It covers catalogue browsing, faceted category listings, search and the cart.
@@ -25,6 +32,7 @@ recommended way to get a local Magento instance with a working GraphQL API — s
 | Server cache  | valkey/redis via ioredis                  | Shared cache for anonymous GraphQL reads; a cache outage only costs latency.                                                                                                                       |
 | Tests         | Vitest, Playwright, axe-core              | Unit for logic, E2E for flows, automated WCAG scans per page type.                                                                                                                                 |
 | Design system | Storybook 10, shadcn/ui (Radix base)      | Compound primitives (Dialog, Select, RadioGroup, Tabs) on our own `@theme` tokens — no separate colour/spacing system. Components are developed and reviewed in isolation, with the a11y addon on. |
+| Theming       | Two-layer tokens, oklch                   | Components name roles (`bg-surface`), never values. Re-skinning is one file. See [Design system](#design-system).                                                                                  |
 
 ### Routing mirrors Magento
 
@@ -76,6 +84,40 @@ fresh cart is issued instead of showing an error.
 Requests carrying a customer token are never cached — a personalised response in a shared
 cache is a data leak. TTLs are per call site (`route` 10 min, category 3 min, navigation and
 store config 1 h). If valkey is unreachable the storefront logs once and serves uncached.
+
+---
+
+## Design system
+
+The storefront is meant to be re-skinned, so the token layer is the part that matters.
+**Run the app and open [`/design`](http://localhost:4321/design)** — it renders every token,
+control and type size, with contrast ratios measured live in your browser, and it ships
+three complete skins plus sliders for the global dials so you can try a direction before
+committing to it.
+
+| File                    | Holds                                               |
+| ----------------------- | --------------------------------------------------- |
+| `src/styles/tokens.css` | The dials, the default skin, and the token contract |
+| `src/styles/skins.css`  | Three preset skins. Delete once you have your own   |
+| `src/styles/global.css` | Base element styles and a few composite classes     |
+
+Three things are worth knowing before you touch a component:
+
+- **Components never name a value.** They use `bg-surface`, `text-ink-muted`, `rounded-card`
+  — role names that resolve through the contract. That is the whole reason a re-skin is a
+  single-file change.
+- **Colour is oklch, not hex.** The first number is perceptual lightness, so swapping a hue
+  keeps the contrast guarantees. Change `264` to `25` and the accent goes red without
+  quietly failing WCAG.
+- **Three dials move everything.** `--dial-radius`, `--dial-shadow` and `--dial-rhythm` are
+  the difference between a Swiss catalogue and a soft DTC brand, in three numbers.
+
+The full guide, including how to self-host the webfont and what the rules mean, is in
+[`docs/THEMING.md`](docs/THEMING.md).
+
+The default skin is deliberately quiet: near-black ink, generous whitespace, one accent
+reserved for the single conversion action on a page. A template's job is to disappear
+behind the merchant's product photography, not to compete with it.
 
 ---
 

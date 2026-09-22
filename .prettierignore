@@ -10,3 +10,6 @@ src/lib/graphql/graphql-env.d.ts
 # Vendored skill content synced from mattpocock/skills, verified by hash in
 # skills-lock.json — reformatting would desync those hashes.
 .agents
+# Installed skill definitions are third-party content too. Mirrors the same
+# exclusion in eslint.config.js.
+.claude/skills

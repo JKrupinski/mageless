@@ -26,7 +26,11 @@ function DialogOverlay({ className, ...props }: ComponentProps<typeof DialogPrim
   return (
     <DialogPrimitive.Overlay
       data-slot="dialog-overlay"
-      className={classNames('fixed inset-0 z-40 bg-black/40', className)}
+      className={classNames(
+        'fixed inset-0 z-50 bg-scrim',
+        'data-[state=open]:animate-fade-in motion-reduce:animate-none',
+        className,
+      )}
       {...props}
     />
   );
@@ -49,8 +53,10 @@ function DialogContent({
       <DialogPrimitive.Content
         data-slot="dialog-content"
         className={classNames(
-          'fixed top-1/2 left-1/2 z-50 w-full max-w-md -translate-x-1/2 -translate-y-1/2',
-          'rounded-[--radius-card] border border-border-subtle bg-surface p-6 text-ink shadow-2xl outline-none',
+          'fixed top-1/2 left-1/2 z-50 w-full max-w-[calc(100%-2rem)] sm:max-w-md',
+          '-translate-x-1/2 -translate-y-1/2',
+          'rounded-panel border border-line bg-surface p-6 text-ink shadow-xl outline-none',
+          'data-[state=open]:animate-scale-in motion-reduce:animate-none',
           className,
         )}
         {...props}
@@ -60,8 +66,8 @@ function DialogContent({
           <DialogPrimitive.Close
             aria-label="Close"
             className={classNames(
-              'absolute top-4 right-4 inline-flex size-8 items-center justify-center rounded-[--radius-control]',
-              'text-ink-muted transition-colors hover:bg-surface-muted hover:text-ink',
+              'absolute top-3.5 right-3.5 inline-flex size-9 cursor-pointer items-center justify-center',
+              'rounded-control text-ink-muted transition-colors hover:bg-surface-hover hover:text-ink',
             )}
           >
             <X className="size-4" aria-hidden="true" />

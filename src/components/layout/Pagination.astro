@@ -8,32 +8,67 @@ interface Props {
 
 const { currentPage, totalPages, buildHref } = Astro.props;
 
-const windowSize = 2;
+const windowSize = 1;
 const pages: number[] = [];
 for (let page = 1; page <= totalPages; page += 1) {
   const nearCurrent = Math.abs(page - currentPage) <= windowSize;
   if (page === 1 || page === totalPages || nearCurrent) pages.push(page);
 }
+
+const hasPrev = currentPage > 1;
+const hasNext = currentPage < totalPages;
+
+const stepClass =
+  'inline-flex h-10 items-center gap-1.5 rounded-control border border-line px-3 text-sm font-medium transition-colors';
 ---
 
 {
   totalPages > 1 && (
-    <nav aria-label="Pagination" class="mt-8 flex justify-center">
+    <nav aria-label="Pagination" class="mt-12 flex flex-col items-center gap-3">
       <ul class="flex items-center gap-1">
         <li>
-          <a
-            href={currentPage > 1 ? buildHref(currentPage - 1) : undefined}
-            aria-disabled={currentPage === 1}
-            rel="prev"
-            class="inline-flex h-9 items-center rounded-[--radius-control] border border-border-subtle px-3 text-sm text-ink aria-disabled:pointer-events-none aria-disabled:opacity-40"
-          >
-            Previous
-          </a>
+          {/* Disabled steps render as plain text, not as a link without an
+              href: an anchor with no href is not focusable, so aria-disabled
+              on one announces a state no keyboard user can ever reach. */}
+          {hasPrev ? (
+            <a
+              href={buildHref(currentPage - 1)}
+              rel="prev"
+              class={`${stepClass} text-ink hover:bg-surface-hover`}
+            >
+              <svg viewBox="0 0 16 16" class="size-4" aria-hidden="true">
+                <path
+                  d="M10 3.5L5.5 8l4.5 4.5"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.75"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+              <span class="sr-only sm:not-sr-only">Previous</span>
+            </a>
+          ) : (
+            <button type="button" disabled class={`${stepClass} text-ink-muted opacity-45`}>
+              <svg viewBox="0 0 16 16" class="size-4" aria-hidden="true">
+                <path
+                  d="M10 3.5L5.5 8l4.5 4.5"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.75"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+              <span class="sr-only sm:not-sr-only">Previous</span>
+            </button>
+          )}
         </li>
+
         {pages.map((page, index) => (
           <>
             {index > 0 && pages[index - 1] !== page - 1 && (
-              <li aria-hidden="true" class="px-1 text-ink-muted">
+              <li aria-hidden="true" class="px-1 text-sm text-ink-muted">
                 …
               </li>
             )}
@@ -41,24 +76,55 @@ for (let page = 1; page <= totalPages; page += 1) {
               <a
                 href={buildHref(page)}
                 aria-current={page === currentPage ? 'page' : undefined}
-                class="inline-flex size-9 items-center justify-center rounded-[--radius-control] border border-border-subtle text-sm text-ink aria-[current=page]:border-brand-600 aria-[current=page]:bg-brand-600 aria-[current=page]:text-white"
+                aria-label={`Page ${page}`}
+                class="numeric inline-flex size-10 items-center justify-center rounded-control text-sm font-medium text-ink-muted transition-colors hover:bg-surface-hover hover:text-ink aria-[current=page]:bg-ink aria-[current=page]:text-on-ink"
               >
                 {page}
               </a>
             </li>
           </>
         ))}
+
         <li>
-          <a
-            href={currentPage < totalPages ? buildHref(currentPage + 1) : undefined}
-            aria-disabled={currentPage === totalPages}
-            rel="next"
-            class="inline-flex h-9 items-center rounded-[--radius-control] border border-border-subtle px-3 text-sm text-ink aria-disabled:pointer-events-none aria-disabled:opacity-40"
-          >
-            Next
-          </a>
+          {hasNext ? (
+            <a
+              href={buildHref(currentPage + 1)}
+              rel="next"
+              class={`${stepClass} text-ink hover:bg-surface-hover`}
+            >
+              <span class="sr-only sm:not-sr-only">Next</span>
+              <svg viewBox="0 0 16 16" class="size-4" aria-hidden="true">
+                <path
+                  d="M6 3.5L10.5 8 6 12.5"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.75"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </a>
+          ) : (
+            <button type="button" disabled class={`${stepClass} text-ink-muted opacity-45`}>
+              <span class="sr-only sm:not-sr-only">Next</span>
+              <svg viewBox="0 0 16 16" class="size-4" aria-hidden="true">
+                <path
+                  d="M6 3.5L10.5 8 6 12.5"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.75"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </button>
+          )}
         </li>
       </ul>
+
+      <p class="numeric text-xs text-ink-muted">
+        Page {currentPage} of {totalPages}
+      </p>
     </nav>
   )
 }

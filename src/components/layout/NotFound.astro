@@ -1,0 +1,47 @@
+---
+/** Shared by the static 404 route and the catch-all resolver, so the two can
+ *  never drift apart. */
+interface Props {
+  /** The path that failed to resolve, shown verbatim when we have one. */
+  path?: string | undefined;
+}
+const { path } = Astro.props;
+---
+
+<div class="mx-auto max-w-lg py-20 text-center sm:py-28">
+  <p class="numeric text-xs font-semibold tracking-[0.14em] text-accent-text uppercase">
+    Error 404
+  </p>
+  <h1 class="mt-4 text-display-md font-semibold text-ink">We could not find that page</h1>
+  <p class="mt-4 text-sm leading-relaxed text-ink-muted">
+    {
+      path ? (
+        <>
+          The URL{' '}
+          <code class="rounded-control bg-surface-sunken px-1.5 py-0.5 text-[0.9em] break-all">
+            /{path}
+          </code>{' '}
+          does not match a product or category in this store.
+        </>
+      ) : (
+        'The page may have been moved, or the link that brought you here may be out of date.'
+      )
+    }
+  </p>
+
+  {/* Two ways out, because "go home" is useless to someone hunting a product. */}
+  <div class="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
+    <a
+      href="/"
+      class="inline-flex h-11 items-center justify-center rounded-control bg-ink px-5 text-sm font-medium text-on-ink transition-colors hover:bg-ink-hover"
+    >
+      Back to the storefront
+    </a>
+    <a
+      href="/search"
+      class="inline-flex h-11 items-center justify-center rounded-control border border-line-strong px-5 text-sm font-medium text-ink transition-colors hover:bg-surface-hover"
+    >
+      Search the catalogue
+    </a>
+  </div>
+</div>

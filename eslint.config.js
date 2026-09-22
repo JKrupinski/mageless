@@ -15,6 +15,10 @@ export default tseslint.config(
       'playwright-report/**',
       'test-results/**',
       'src/lib/graphql/graphql-env.d.ts',
+      // Vendored skill definitions: third-party content, tracked but not ours
+      // to lint. Mirrors the same exclusion in .prettierignore.
+      '.claude/skills/**',
+      '.agents/**',
     ],
   },
 

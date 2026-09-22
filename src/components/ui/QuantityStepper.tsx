@@ -1,4 +1,5 @@
 import { useId } from 'react';
+import { Minus, Plus } from 'lucide-react';
 import { classNames } from '@lib/format';
 
 export interface QuantityStepperProps {
@@ -10,6 +11,12 @@ export interface QuantityStepperProps {
   label?: string;
   className?: string;
 }
+
+const STEP_BUTTON = [
+  'inline-flex size-10 shrink-0 cursor-pointer items-center justify-center text-ink',
+  'transition-colors duration-150 ease-out-soft hover:bg-surface-hover',
+  'disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:bg-transparent',
+].join(' ');
 
 /**
  * A real `<input type="number">` wrapped in buttons: keyboard users get native
@@ -28,7 +35,15 @@ export function QuantityStepper({
   const clamp = (next: number) => Math.min(max, Math.max(min, next));
 
   return (
-    <div className={classNames('inline-flex items-stretch', className)}>
+    // The border is on the group, not on each part: three adjacent bordered
+    // boxes render a 2px seam between them at most zoom levels.
+    <div
+      className={classNames(
+        'inline-flex items-stretch overflow-hidden rounded-control border border-line-strong bg-surface',
+        disabled && 'opacity-60',
+        className,
+      )}
+    >
       <label htmlFor={inputId} className="sr-only">
         {label}
       </label>
@@ -37,9 +52,9 @@ export function QuantityStepper({
         disabled={disabled || value <= min}
         onClick={() => onChange(clamp(value - 1))}
         aria-label="Decrease quantity"
-        className="size-10 rounded-l-[--radius-control] border border-border-subtle text-lg leading-none text-ink disabled:opacity-40"
+        className={STEP_BUTTON}
       >
-        −
+        <Minus className="size-4" aria-hidden="true" />
       </button>
       <input
         id={inputId}
@@ -53,16 +68,21 @@ export function QuantityStepper({
           const next = Number.parseInt(event.target.value, 10);
           onChange(Number.isNaN(next) ? min : clamp(next));
         }}
-        className="h-10 w-14 border-y border-border-subtle bg-surface text-center text-sm text-ink [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none"
+        className={classNames(
+          'numeric h-10 w-12 border-x border-line bg-transparent text-center text-sm font-medium text-ink',
+          // The native spinners duplicate the two buttons either side of the
+          // field and shrink the usable hit area of the input itself.
+          '[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none',
+        )}
       />
       <button
         type="button"
         disabled={disabled || value >= max}
         onClick={() => onChange(clamp(value + 1))}
         aria-label="Increase quantity"
-        className="size-10 rounded-r-[--radius-control] border border-border-subtle text-lg leading-none text-ink disabled:opacity-40"
+        className={STEP_BUTTON}
       >
-        +
+        <Plus className="size-4" aria-hidden="true" />
       </button>
     </div>
   );

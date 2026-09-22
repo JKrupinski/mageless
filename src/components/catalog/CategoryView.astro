@@ -1,38 +1,24 @@
 ---
+import { PackageOpen } from 'lucide-react';
 import { ProductGrid } from '@/components/product/ProductGrid';
 import Breadcrumbs from '@/components/layout/Breadcrumbs.astro';
+import CategoryTiles from '@/components/catalog/CategoryTiles.astro';
+import FeaturedStrip from '@/components/catalog/FeaturedStrip.astro';
 import FacetSidebar from '@/components/layout/FacetSidebar.astro';
 import Pagination from '@/components/layout/Pagination.astro';
-import { SORT_OPTIONS, type Facet } from '@lib/catalog';
-import type { ProductCardData } from '@/components/product/ProductCard';
+import { SORT_OPTIONS } from '@lib/catalog';
+import type { CategoryViewModel } from '@lib/viewmodels/category';
 
 interface Props {
-  name: string;
-  descriptionHtml: string | null;
-  breadcrumbs: { name: string; href: string }[];
-  products: readonly (ProductCardData | null)[];
-  facets: Facet[];
-  totalCount: number;
+  category: CategoryViewModel;
   currentPage: number;
-  totalPages: number;
   sort: string;
   url: URL;
   locale: string;
 }
 
-const {
-  name,
-  descriptionHtml,
-  breadcrumbs,
-  products,
-  facets,
-  totalCount,
-  currentPage,
-  totalPages,
-  sort,
-  url,
-  locale,
-} = Astro.props;
+const { category, currentPage, sort, url, locale } = Astro.props;
+const { subcategories, listing, featured } = category;
 
 const buildHref = (page: number) => {
   const next = new URL(url.toString());
@@ -48,49 +34,126 @@ const sortHref = (value: string) => {
   next.searchParams.delete('p');
   return `${next.pathname}${next.search}`;
 };
+
+/*
+ * An empty listing has two unrelated causes, and saying "no products matched
+ * your selection" when nobody selected anything blames the shopper for the
+ * merchandiser's empty shelf.
+ */
+const empty = listing?.filtered
+  ? {
+      message: 'No products matched your selection.',
+      action: { label: 'Clear filters', href: url.pathname },
+    }
+  : {
+      message: `There are no products in ${category.name} yet.`,
+      action: { label: 'Browse everything', href: '/' },
+    };
 ---
 
-<Breadcrumbs items={breadcrumbs} />
+<Breadcrumbs items={category.breadcrumbs} />
 
-<header class="mt-4">
-  <h1 class="text-2xl font-semibold tracking-tight text-ink">{name}</h1>
+<header class="mt-5 border-b border-line pb-6">
+  <h1 class="text-display-md font-semibold text-ink">{category.name}</h1>
   {
-    descriptionHtml && (
-      <div class="mt-2 max-w-3xl text-sm text-ink-muted" set:html={descriptionHtml} />
+    category.descriptionHtml && (
+      <div class="prose-cms mt-3 max-w-2xl" set:html={category.descriptionHtml} />
     )
   }
 </header>
 
-<div class="mt-6 grid gap-8 lg:grid-cols-[16rem_1fr]">
-  <FacetSidebar facets={facets} url={url} />
+{
+  subcategories.length > 0 && (
+    <section class="mt-8" aria-labelledby="subcategories">
+      <h2 id="subcategories" class="text-sm font-semibold tracking-wide text-ink uppercase">
+        Shop {category.name}
+      </h2>
+      <CategoryTiles class="mt-4" categories={subcategories} />
+    </section>
+  )
+}
 
-  <div>
-    <div
-      class="flex flex-wrap items-center justify-between gap-3 border-b border-border-subtle pb-3"
-    >
-      <p class="text-sm text-ink-muted" aria-live="polite">
-        {totalCount}
-        {totalCount === 1 ? 'product' : 'products'}
-      </p>
-      <nav aria-label="Sort by" class="flex flex-wrap items-center gap-1 text-sm">
-        <span class="mr-1 text-ink-muted">Sort:</span>
-        {
-          SORT_OPTIONS.map((option) => (
-            <a
-              href={sortHref(option.value)}
-              rel="nofollow"
-              aria-current={sort === option.value ? 'true' : undefined}
-              class="rounded-[--radius-control] px-2 py-1 text-ink-muted hover:bg-surface-muted aria-[current]:font-semibold aria-[current]:text-brand-700"
-            >
-              {option.label}
-            </a>
-          ))
-        }
-      </nav>
+{
+  listing && (
+    <div class="mt-8 grid gap-x-10 gap-y-8 lg:grid-cols-[15rem_1fr]">
+      {/* The facet panel stays in normal flow on phones rather than moving into a
+          drawer. Every facet is already a collapsed disclosure, so it costs about
+          one screen-third of height, and a no-JS drawer cannot be opened at all
+          with scripting off — which is the whole reason the filters are links. */}
+      <div class="lg:sticky lg:top-36 lg:self-start">
+        <FacetSidebar facets={listing.facets} url={url} />
+      </div>
+
+      <div class="min-w-0">
+        <div class="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 border-b border-line pb-3">
+          {/* aria-live so a filtered result announces its new size to a screen
+              reader after a full page load, not just visually. */}
+          <p class="numeric text-sm text-ink-muted" aria-live="polite">
+            <span class="font-medium text-ink">{listing.totalCount}</span>
+            {listing.totalCount === 1 ? ' product' : ' products'}
+          </p>
+
+          <nav aria-label="Sort by" class="-mx-1 flex min-w-0 items-center gap-1">
+            <span class="shrink-0 px-1 text-sm text-ink-muted">Sort</span>
+            <span class="hide-scrollbar flex gap-1 overflow-x-auto">
+              {SORT_OPTIONS.map((option) => (
+                <a
+                  href={sortHref(option.value)}
+                  rel="nofollow"
+                  aria-current={sort === option.value ? 'true' : undefined}
+                  class="inline-flex h-8 shrink-0 items-center rounded-control px-2.5 text-sm whitespace-nowrap text-ink-muted transition-colors hover:bg-surface-hover hover:text-ink aria-[current]:bg-ink aria-[current]:text-on-ink"
+                >
+                  {option.label}
+                </a>
+              ))}
+            </span>
+          </nav>
+        </div>
+
+        <ProductGrid
+          className="mt-8"
+          products={listing.products}
+          locale={locale}
+          priorityCount={4}
+          columns={3}
+          emptyMessage={empty.message}
+          emptyAction={empty.action}
+        />
+
+        <Pagination
+          currentPage={currentPage}
+          totalPages={listing.totalPages}
+          buildHref={buildHref}
+        />
+      </div>
     </div>
+  )
+}
 
-    <ProductGrid className="mt-6" products={products} locale={locale} priorityCount={4} />
+{
+  featured && (
+    <FeaturedStrip
+      name={featured.name}
+      href={featured.href}
+      totalCount={featured.totalCount}
+      products={featured.products}
+      locale={locale}
+    />
+  )
+}
 
-    <Pagination currentPage={currentPage} totalPages={totalPages} buildHref={buildHref} />
-  </div>
-</div>
+{
+  category.isEmpty && (
+    <div class="mt-8 flex flex-col items-center rounded-panel border border-dashed border-line px-6 py-16 text-center">
+      <PackageOpen className="size-7 text-ink-subtle" aria-hidden="true" />
+      <p class="mt-4 text-sm font-medium text-ink">There is nothing in {category.name} yet.</p>
+      <p class="mt-1 text-sm text-ink-muted">Check back soon, or carry on browsing the shop.</p>
+      <a
+        href="/"
+        class="mt-6 inline-flex h-10 items-center rounded-control border border-line-strong px-4 text-sm font-medium text-ink transition-colors hover:bg-surface-hover"
+      >
+        Browse everything
+      </a>
+    </div>
+  )
+}

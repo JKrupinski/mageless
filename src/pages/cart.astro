@@ -14,8 +14,13 @@ const summary = toCartSummary(cart);
     never cached, and never indexed. */
 }
 <BaseLayout title="Your cart" noindex>
-  <h1 class="text-2xl font-semibold tracking-tight text-ink">Your cart</h1>
-  <div class="mt-6">
+  <header class="border-b border-line pb-6">
+    <h1 class="text-display-md font-semibold text-ink">Your cart</h1>
+    <p class="mt-2 text-sm text-ink-muted">
+      Checkout is completed in Magento — this storefront hands the cart over intact.
+    </p>
+  </header>
+  <div class="mt-8">
     <CartLines client:load initialCart={summary} locale={store.locale} />
   </div>
 </BaseLayout>

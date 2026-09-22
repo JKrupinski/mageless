@@ -11,7 +11,7 @@ export function Skeleton({ className, aspect }: SkeletonProps) {
     <div
       aria-hidden="true"
       style={aspect ? { aspectRatio: aspect } : undefined}
-      className={classNames('animate-pulse rounded-[--radius-card] bg-surface-inset', className)}
+      className={classNames('animate-pulse rounded-card bg-surface-sunken', className)}
     />
   );
 }

@@ -1,95 +1,74 @@
 @import 'tailwindcss';
+@import './tokens.css';
+@import './skins.css';
 
-/*
- * Design tokens.
- *
- * Everything the design system draws with is declared here once, as Tailwind v4
- * theme variables. Components never hard-code a hex value or a raw pixel size —
- * they reference a token, which is what makes re-theming a single-file change.
- */
-@theme {
-  /* Brand ---------------------------------------------------------------- */
-  --color-brand-50: oklch(0.971 0.014 254);
-  --color-brand-100: oklch(0.932 0.032 255);
-  --color-brand-200: oklch(0.885 0.062 254);
-  --color-brand-300: oklch(0.809 0.105 252);
-  --color-brand-400: oklch(0.707 0.165 254);
-  --color-brand-500: oklch(0.623 0.214 259);
-  --color-brand-600: oklch(0.546 0.245 262);
-  --color-brand-700: oklch(0.488 0.243 264);
-  --color-brand-800: oklch(0.424 0.199 265);
-  --color-brand-900: oklch(0.379 0.146 265);
-
-  /* Semantic ------------------------------------------------------------- */
-  --color-surface: oklch(1 0 0);
-  --color-surface-muted: oklch(0.975 0.002 258);
-  --color-surface-inset: oklch(0.955 0.004 258);
-  --color-border-subtle: oklch(0.91 0.005 258);
-  --color-ink: oklch(0.21 0.02 258);
-  --color-ink-muted: oklch(0.52 0.015 258);
-  /* Status colours are darkened until they clear 4.5:1 as text on --color-surface
-     (WCAG 2.1 AA, 1.4.3); the tinted badge backgrounds use the same hue at low
-     alpha, so one token drives both. */
-  --color-success: oklch(0.5 0.14 150);
-  --color-danger: oklch(0.51 0.2 25);
-  --color-sale: oklch(0.51 0.2 25);
-
-  /* Typography ----------------------------------------------------------- */
-  --font-sans: 'Inter var', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
-
-  /* Shape ---------------------------------------------------------------- */
-  --radius-card: 0.75rem;
-  --radius-control: 0.5rem;
-
-  /* Motion --------------------------------------------------------------- */
-  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme='light']) {
-    --color-surface: oklch(0.19 0.015 258);
-    --color-surface-muted: oklch(0.23 0.015 258);
-    --color-surface-inset: oklch(0.27 0.015 258);
-    --color-border-subtle: oklch(0.33 0.012 258);
-    --color-ink: oklch(0.96 0.005 258);
-    --color-ink-muted: oklch(0.72 0.012 258);
-    /* On a dark surface the same hues have to move the other way. */
-    --color-success: oklch(0.8 0.16 150);
-    --color-danger: oklch(0.75 0.16 25);
-    --color-sale: oklch(0.75 0.16 25);
-  }
-}
-
-:root[data-theme='dark'] {
-  --color-surface: oklch(0.19 0.015 258);
-  --color-surface-muted: oklch(0.23 0.015 258);
-  --color-surface-inset: oklch(0.27 0.015 258);
-  --color-border-subtle: oklch(0.33 0.012 258);
-  --color-ink: oklch(0.96 0.005 258);
-  --color-ink-muted: oklch(0.72 0.012 258);
-  --color-success: oklch(0.8 0.16 150);
-  --color-danger: oklch(0.75 0.16 25);
-  --color-sale: oklch(0.75 0.16 25);
-}
+/* Variant for styling a subtree when the dark theme is active, regardless of
+   whether it came from the OS preference or the explicit toggle. */
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
 
 @layer base {
   html {
     -webkit-text-size-adjust: 100%;
     scrollbar-gutter: stable;
+    /* Anchor links and in-page jumps clear the sticky header. */
+    scroll-padding-top: 6rem;
   }
 
   body {
-    background-color: var(--color-surface);
-    color: var(--color-ink);
+    background-color: var(--canvas);
+    color: var(--ink);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    /* Inter's contextual alternates fix the `l`/`1` ambiguity in SKUs. */
+    font-feature-settings:
+      'cv05' 1,
+      'cv11' 1;
   }
 
-  /* Visible focus for keyboard users everywhere — a WCAG 2.4.7 baseline. */
+  /* Keyboard focus, defined once. Every interactive element inherits it, so a
+     re-skin cannot accidentally ship an invisible focus state (WCAG 2.4.7).
+     The double ring keeps the indicator visible on both light and dark fills. */
   :focus-visible {
-    outline: 2px solid var(--color-brand-600);
+    outline: 2px solid var(--ring);
     outline-offset: 2px;
-    border-radius: 2px;
+    border-radius: var(--r-sm);
+  }
+
+  /* Pointer interaction never removes it; only pointer-driven focus is quiet. */
+  :focus:not(:focus-visible) {
+    outline: none;
+  }
+
+  ::selection {
+    background-color: var(--accent);
+    color: var(--on-accent);
+  }
+
+  /* Headings wrap on meaning rather than on width. `balance` is a hint the
+     browser may ignore above a few lines, which is why it is scoped to
+     headings and not applied to body copy. */
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  /* URLs, SKUs and pasted customer content reflow instead of widening a card. */
+  :where(p, li, dd, td, h1, h2, h3, h4) {
+    overflow-wrap: anywhere;
+  }
+
+  img,
+  svg,
+  video {
+    /* Nothing overflows its column just because Magento served a wide asset. */
+    max-width: 100%;
+    height: auto;
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -105,11 +84,67 @@
 }
 
 @layer components {
-  /* Skip link: hidden until focused, then pinned to the top-left. */
+  /* The one page gutter and measure, so every route lines up with every other.
+     16px gutter on phones is the minimum that keeps text off the bezel. */
+  .container-page {
+    @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;
+  }
+
+  /* Skip link: off-screen until focused, then the first thing on the page. */
   .skip-link {
     @apply sr-only;
   }
-  .skip-link:focus {
-    @apply not-sr-only fixed top-2 left-2 z-50 rounded-[--radius-control] bg-brand-600 px-4 py-2 text-white;
+
+  .skip-link:focus-visible {
+    @apply not-sr-only fixed top-3 left-3 z-[100] rounded-control bg-ink px-4 py-2.5 text-sm font-medium text-on-ink shadow-lg;
+  }
+
+  /* Prices, quantities and totals. Tabular figures stop a cart total from
+     jiggling by a pixel every time a digit changes. */
+  .numeric {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings:
+      'tnum' 1,
+      'cv05' 1;
+  }
+
+  /* Sanitized CMS and product HTML from Magento. Scoped so merchant content
+     inherits the type system without a plugin. */
+  .prose-cms {
+    @apply text-sm leading-relaxed text-ink-muted;
+  }
+  .prose-cms :where(p, ul, ol) {
+    @apply my-3 max-w-[68ch];
+  }
+  .prose-cms :where(h1, h2, h3, h4) {
+    @apply mt-6 mb-2 font-semibold text-ink;
+  }
+  .prose-cms :where(ul) {
+    @apply list-disc pl-5;
+  }
+  .prose-cms :where(ol) {
+    @apply list-decimal pl-5;
+  }
+  .prose-cms :where(a) {
+    @apply text-accent-text underline underline-offset-2;
+  }
+  .prose-cms :where(strong) {
+    @apply font-semibold text-ink;
+  }
+  .prose-cms :where(img) {
+    @apply my-4 rounded-card;
+  }
+  .prose-cms :where(table) {
+    @apply my-4 w-full text-left;
+  }
+  .prose-cms :where(th, td) {
+    @apply border-b border-line py-2 pr-4;
+  }
+}
+
+@utility hide-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
   }
 }

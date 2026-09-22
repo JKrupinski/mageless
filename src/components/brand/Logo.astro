@@ -1,0 +1,40 @@
+---
+/**
+ * The Mageless mark: Magento's diamond with its head taken off.
+ *
+ * Magento's own identity is a diamond; slicing its top vertex away and letting
+ * the tip float clear of the body says "this is a Magento storefront, and the
+ * head is somewhere else" in one glyph. Filled rather than stroked so the gap
+ * survives down to a 16px browser tab, and drawn in `currentColor` so it
+ * inherits type colour and follows any re-skin.
+ */
+interface Props {
+  /** `full` is the mark plus wordmark; `mark` is the glyph alone. */
+  variant?: 'full' | 'mark';
+  /** Rendered under the wordmark. Kept out of the tab and the header. */
+  tagline?: string | undefined;
+  class?: string;
+}
+
+const { variant = 'full', tagline, class: className = '' } = Astro.props;
+---
+
+<span class:list={['inline-flex items-center gap-2.5', className]}>
+  <svg viewBox="0 0 32 32" aria-hidden="true" class="size-7 shrink-0 text-accent-text">
+    {/* the detached head */}
+    <path d="M16 2.2 21 7.4H11z" fill="currentColor"></path>
+    {/* the body it came off */}
+    <path d="M9.8 11h12.4L28 17 16 29.4 4 17z" fill="currentColor"></path>
+  </svg>
+
+  {
+    variant === 'full' && (
+      <span class="flex flex-col leading-none">
+        <span class="text-lg font-semibold tracking-[-0.03em] text-ink">
+          mage<span class="text-accent-text">less</span>
+        </span>
+        {tagline && <span class="mt-1 text-[0.6875rem] text-ink-muted">{tagline}</span>}
+      </span>
+    )
+  }
+</span>

@@ -4,11 +4,24 @@ import { NavigationQuery, StoreConfigQuery } from './graphql/queries/catalog';
 /** Category ids are stable per installation; Magento's default root is 2. */
 const ROOT_CATEGORY_ID = '2';
 
+/**
+ * A link to a Category, carrying the size of what sits behind it. The header
+ * menu, the home page's top-level row and a Category Landing's Subcategory
+ * tiles are all the same thing to a shopper — a way into part of the
+ * catalogue — and were drifting as three copies of one shape.
+ */
+export interface CategoryLink {
+  uid: string;
+  name: string;
+  href: string;
+  productCount: number | null;
+}
+
 export interface NavItem {
   uid: string;
   name: string;
   href: string;
-  children: { uid: string; name: string; href: string; productCount: number | null }[];
+  children: CategoryLink[];
 }
 
 /**

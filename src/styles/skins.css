@@ -1,0 +1,193 @@
+/* =============================================================================
+ * Preset skins
+ * =============================================================================
+ *
+ * Proof that the token contract holds: each block below re-skins the entire
+ * storefront by redefining only the skin layer and the dials from tokens.css.
+ * No component knows these exist.
+ *
+ * Apply with `<html data-skin="warm">`, or delete this file and its import
+ * once you have settled on your own values in tokens.css.
+ * -------------------------------------------------------------------------- */
+
+/* Warm — sand and terracotta, rounder corners, softer shadows. The register
+   most direct-to-consumer brands use. */
+[data-skin='warm'] {
+  --dial-radius: 2;
+  --dial-shadow: 1;
+  --dial-rhythm: 1.4;
+
+  --canvas: oklch(0.98 0.008 85);
+  --surface: oklch(0.995 0.004 85);
+  --surface-sunken: oklch(0.955 0.012 85);
+  --surface-hover: oklch(0.948 0.014 85);
+
+  --ink: oklch(0.23 0.018 55);
+  --ink-hover: oklch(0.35 0.022 55);
+  --ink-muted: oklch(0.51 0.02 55);
+  --ink-subtle: oklch(0.61 0.018 55);
+  --on-ink: oklch(0.99 0.004 85);
+
+  --line: oklch(0.9 0.013 75);
+  --line-strong: oklch(0.66 0.02 65);
+
+  --accent: oklch(0.5 0.14 42);
+  --accent-hover: oklch(0.44 0.14 42);
+  --accent-active: oklch(0.39 0.13 42);
+  --accent-text: oklch(0.47 0.14 42);
+  --accent-soft: oklch(0.955 0.03 42);
+  --on-accent: oklch(1 0 0);
+
+  --sale: oklch(0.48 0.15 25);
+  --sale-soft: oklch(0.955 0.03 25);
+}
+
+[data-skin='warm'][data-theme='dark'],
+[data-skin='warm'] [data-theme='dark'] {
+  --canvas: oklch(0.19 0.014 55);
+  --surface: oklch(0.235 0.016 55);
+  --surface-sunken: oklch(0.17 0.013 55);
+  --surface-hover: oklch(0.28 0.018 55);
+
+  --ink: oklch(0.96 0.006 85);
+  --ink-hover: oklch(0.86 0.01 85);
+  --ink-muted: oklch(0.74 0.016 75);
+  --ink-subtle: oklch(0.61 0.016 65);
+  --on-ink: oklch(0.19 0.014 55);
+
+  --line: oklch(0.33 0.016 55);
+  --line-strong: oklch(0.46 0.02 55);
+
+  --accent: oklch(0.58 0.15 45);
+  --accent-hover: oklch(0.64 0.145 45);
+  --accent-active: oklch(0.7 0.13 45);
+  --accent-text: oklch(0.79 0.11 48);
+  --accent-soft: oklch(0.3 0.05 45);
+
+  --sale: oklch(0.72 0.15 28);
+  --sale-soft: oklch(0.3 0.055 28);
+}
+
+@media (prefers-color-scheme: dark) {
+  [data-skin='warm']:not([data-theme='light']) {
+    --canvas: oklch(0.19 0.014 55);
+    --surface: oklch(0.235 0.016 55);
+    --surface-sunken: oklch(0.17 0.013 55);
+    --surface-hover: oklch(0.28 0.018 55);
+
+    --ink: oklch(0.96 0.006 85);
+    --ink-hover: oklch(0.86 0.01 85);
+    --ink-muted: oklch(0.74 0.016 75);
+    --ink-subtle: oklch(0.61 0.016 65);
+    --on-ink: oklch(0.19 0.014 55);
+
+    --line: oklch(0.33 0.016 55);
+    --line-strong: oklch(0.46 0.02 55);
+
+    --accent: oklch(0.58 0.15 45);
+    --accent-hover: oklch(0.64 0.145 45);
+    --accent-active: oklch(0.7 0.13 45);
+    --accent-text: oklch(0.79 0.11 48);
+    --accent-soft: oklch(0.3 0.05 45);
+
+    --sale: oklch(0.72 0.15 28);
+    --sale-soft: oklch(0.3 0.055 28);
+  }
+}
+
+/* Mono — no hue at all, square corners, no shadow. The accent collapses onto
+   the ink, which is the hardest test a token contract can face: if anything
+   still shows colour under this skin, that component hard-coded a value. */
+[data-skin='mono'] {
+  --dial-radius: 0;
+  --dial-shadow: 0;
+  --dial-rhythm: 1.25;
+
+  --canvas: oklch(0.975 0 0);
+  --surface: oklch(1 0 0);
+  --surface-sunken: oklch(0.95 0 0);
+  --surface-hover: oklch(0.94 0 0);
+
+  --ink: oklch(0.17 0 0);
+  --ink-hover: oklch(0.3 0 0);
+  --ink-muted: oklch(0.5 0 0);
+  --ink-subtle: oklch(0.6 0 0);
+  --on-ink: oklch(1 0 0);
+
+  --line: oklch(0.88 0 0);
+  --line-strong: oklch(0.62 0 0);
+
+  --accent: oklch(0.17 0 0);
+  --accent-hover: oklch(0.3 0 0);
+  --accent-active: oklch(0.4 0 0);
+  --accent-text: oklch(0.25 0 0);
+  --accent-soft: oklch(0.93 0 0);
+  --on-accent: oklch(1 0 0);
+
+  --success: oklch(0.42 0 0);
+  --success-soft: oklch(0.93 0 0);
+  --sale: oklch(0.17 0 0);
+  --sale-soft: oklch(0.9 0 0);
+  --rating: oklch(0.42 0 0);
+}
+
+[data-skin='mono'][data-theme='dark'],
+[data-skin='mono'] [data-theme='dark'] {
+  --canvas: oklch(0.15 0 0);
+  --surface: oklch(0.2 0 0);
+  --surface-sunken: oklch(0.13 0 0);
+  --surface-hover: oklch(0.25 0 0);
+
+  --ink: oklch(0.97 0 0);
+  --ink-hover: oklch(0.86 0 0);
+  --ink-muted: oklch(0.73 0 0);
+  --ink-subtle: oklch(0.58 0 0);
+  --on-ink: oklch(0.15 0 0);
+
+  --line: oklch(0.3 0 0);
+  --line-strong: oklch(0.45 0 0);
+
+  --accent: oklch(0.97 0 0);
+  --accent-hover: oklch(0.86 0 0);
+  --accent-active: oklch(0.78 0 0);
+  --accent-text: oklch(0.92 0 0);
+  --accent-soft: oklch(0.28 0 0);
+  --on-accent: oklch(0.15 0 0);
+
+  --success: oklch(0.82 0 0);
+  --success-soft: oklch(0.28 0 0);
+  --sale: oklch(0.97 0 0);
+  --sale-soft: oklch(0.3 0 0);
+  --rating: oklch(0.82 0 0);
+}
+
+@media (prefers-color-scheme: dark) {
+  [data-skin='mono']:not([data-theme='light']) {
+    --canvas: oklch(0.15 0 0);
+    --surface: oklch(0.2 0 0);
+    --surface-sunken: oklch(0.13 0 0);
+    --surface-hover: oklch(0.25 0 0);
+
+    --ink: oklch(0.97 0 0);
+    --ink-hover: oklch(0.86 0 0);
+    --ink-muted: oklch(0.73 0 0);
+    --ink-subtle: oklch(0.58 0 0);
+    --on-ink: oklch(0.15 0 0);
+
+    --line: oklch(0.3 0 0);
+    --line-strong: oklch(0.45 0 0);
+
+    --accent: oklch(0.97 0 0);
+    --accent-hover: oklch(0.86 0 0);
+    --accent-active: oklch(0.78 0 0);
+    --accent-text: oklch(0.92 0 0);
+    --accent-soft: oklch(0.28 0 0);
+    --on-accent: oklch(0.15 0 0);
+
+    --success: oklch(0.82 0 0);
+    --success-soft: oklch(0.28 0 0);
+    --sale: oklch(0.97 0 0);
+    --sale-soft: oklch(0.3 0 0);
+    --rating: oklch(0.82 0 0);
+  }
+}

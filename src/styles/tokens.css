@@ -1,0 +1,308 @@
+/* =============================================================================
+ * Mageless — design tokens
+ * =============================================================================
+ *
+ * This is the file you edit to re-skin the storefront. Nothing below the
+ * "CONTRACT" section needs to change to make the store look like a different
+ * brand — components only ever reference the role names declared there.
+ *
+ * Three layers, in dependency order:
+ *
+ *   1. DIALS      three numbers that move the whole system at once
+ *   2. SKIN       the colour values for one theme (light + dark)
+ *   3. CONTRACT   role names -> skin values, exposed to Tailwind as utilities
+ *
+ * `@theme inline` is deliberate: it makes `bg-surface` compile to
+ * `background-color: var(--surface)` rather than to a second indirection.
+ * That is what lets a *nested* element override `--surface` and re-theme its
+ * subtree — used by the swatch previews on /design. Without `inline`, only
+ * overrides on :root would take effect.
+ * -------------------------------------------------------------------------- */
+
+/* 1. DIALS ---------------------------------------------------------------- */
+
+:root {
+  /* Corner roundness for the entire UI.
+     0 = square (brutalist) · 1 = Swiss default (6px cards) · 2 = soft/DTC · 3 = pill-ish */
+  --dial-radius: 1;
+
+  /* Shadow presence. 0 = flat, borders only (Swiss default) · 1 = normal · 2 = lifted */
+  --dial-shadow: 0.55;
+
+  /* Vertical rhythm between page sections. 1 = compact · 1.25 = default · 1.6 = airy */
+  --dial-rhythm: 1.25;
+}
+
+/* 2. SKIN — default "Noir" ------------------------------------------------ */
+
+/* Every value is oklch(L C H): lightness is perceptual, so contrast stays
+   predictable when you only change the hue. Ratios noted against the surface
+   the token is used on; all body-text pairs clear WCAG 2.1 AA (4.5:1). */
+
+:root {
+  /* Surfaces, lightest to deepest */
+  --canvas: oklch(0.985 0.001 265); /* page background */
+  --surface: oklch(1 0 0); /* cards, header, menus */
+  --surface-sunken: oklch(0.962 0.002 265); /* inputs, wells, image pads */
+  --surface-hover: oklch(0.955 0.003 265); /* row and menu-item hover */
+
+  /* Text and ink-filled controls */
+  --ink: oklch(0.205 0.012 265); /* 15.8:1 on surface */
+  --ink-hover: oklch(0.33 0.014 265); /* hover for ink-filled buttons */
+  --ink-muted: oklch(0.505 0.014 265); /* 4.8:1 — secondary body text */
+  --ink-subtle: oklch(0.6 0.012 265); /* 3.4:1 — icons and 3:1 UI only, never body */
+  --on-ink: oklch(0.99 0 0); /* text on an ink-filled surface */
+
+  /* Lines */
+  --line: oklch(0.905 0.004 265); /* decorative separators */
+  --line-strong: oklch(0.66 0.01 265); /* 3.1:1 — input and control boundaries */
+
+  /* Accent — links, focus, active nav, interactive affordance.
+     Change the hue (last number) to re-brand; L and C are tuned to stay
+     accessible across the whole hue circle. Safe range: any hue, 0.14-0.20 C. */
+  --accent: oklch(0.5 0.19 264); /* fill; white text on it = 7.5:1 */
+  --accent-hover: oklch(0.44 0.19 264);
+  --accent-active: oklch(0.38 0.17 264);
+  --accent-text: oklch(0.47 0.19 264); /* 7.1:1 — accent used as text */
+  --accent-soft: oklch(0.955 0.025 264); /* tinted background */
+  --on-accent: oklch(1 0 0);
+
+  /* Status. Each ships a text-weight and a background-weight value so a badge
+     and its label are driven by one decision, not two. */
+  --success: oklch(0.48 0.14 152);
+  --success-soft: oklch(0.955 0.03 152);
+  --danger: oklch(0.505 0.2 27);
+  --danger-soft: oklch(0.96 0.025 27);
+  --warning: oklch(0.52 0.13 75);
+  --warning-soft: oklch(0.96 0.04 75);
+  /* A discount is not an error, so sale has its own token: a merchant may
+     want it green or gold without touching the error states. */
+  --sale: oklch(0.505 0.2 27);
+  --sale-soft: oklch(0.96 0.025 27);
+  /* Review stars. Their own token, not --warning: a four-star product is not
+     a caution, and a merchant re-colouring low-stock badges should not
+     silently re-colour every rating on the site. Lightness is held at 3:1
+     against --surface, the floor for meaningful graphics (WCAG 1.4.11). */
+  --rating: oklch(0.62 0.15 72);
+
+  /* The scrim behind a modal. Always dark, in both themes: it exists to push
+     the page back, and a light scrim over a dark page does the opposite. */
+  --scrim: oklch(0.15 0.02 265 / 0.5);
+
+  /* Focus ring — one token so a re-skin can never lose keyboard visibility */
+  --ring: var(--accent);
+}
+
+/* Dark. Not an inversion: surfaces lift instead of dropping, chroma comes down
+   so saturated hues do not vibrate on a dark field, and status colours move to
+   the light end of their ramp. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --canvas: oklch(0.175 0.012 265);
+    --surface: oklch(0.215 0.013 265);
+    --surface-sunken: oklch(0.155 0.012 265);
+    --surface-hover: oklch(0.26 0.014 265);
+
+    --ink: oklch(0.96 0.003 265);
+    --ink-hover: oklch(0.86 0.008 265);
+    --ink-muted: oklch(0.735 0.012 265); /* 5.6:1 on surface */
+    --ink-subtle: oklch(0.6 0.012 265);
+    --on-ink: oklch(0.17 0.012 265);
+
+    --line: oklch(0.31 0.012 265);
+    --line-strong: oklch(0.44 0.014 265);
+
+    --accent: oklch(0.56 0.2 264); /* white text on it = 6.2:1 */
+    --accent-hover: oklch(0.62 0.19 264);
+    --accent-active: oklch(0.68 0.17 264);
+    --accent-text: oklch(0.78 0.13 264); /* 8.0:1 on surface */
+    --accent-soft: oklch(0.28 0.06 264);
+    --on-accent: oklch(1 0 0);
+
+    --success: oklch(0.78 0.15 152);
+    --success-soft: oklch(0.28 0.05 152);
+    --danger: oklch(0.72 0.16 27);
+    --danger-soft: oklch(0.29 0.06 27);
+    --warning: oklch(0.8 0.13 75);
+    --warning-soft: oklch(0.3 0.05 75);
+    --sale: oklch(0.72 0.16 27);
+    --sale-soft: oklch(0.29 0.06 27);
+    --rating: oklch(0.8 0.14 80);
+    --scrim: oklch(0.06 0.01 265 / 0.68);
+  }
+}
+
+/* The same values again under an explicit opt-in, so the toggle can override
+   the OS preference in either direction. Kept verbatim rather than @apply-ed
+   because a media query and an attribute selector cannot share a rule. */
+:root[data-theme='dark'],
+[data-theme='dark'] {
+  --canvas: oklch(0.175 0.012 265);
+  --surface: oklch(0.215 0.013 265);
+  --surface-sunken: oklch(0.155 0.012 265);
+  --surface-hover: oklch(0.26 0.014 265);
+
+  --ink: oklch(0.96 0.003 265);
+  --ink-hover: oklch(0.86 0.008 265);
+  --ink-muted: oklch(0.735 0.012 265);
+  --ink-subtle: oklch(0.6 0.012 265);
+  --on-ink: oklch(0.17 0.012 265);
+
+  --line: oklch(0.31 0.012 265);
+  --line-strong: oklch(0.44 0.014 265);
+
+  --accent: oklch(0.56 0.2 264);
+  --accent-hover: oklch(0.62 0.19 264);
+  --accent-active: oklch(0.68 0.17 264);
+  --accent-text: oklch(0.78 0.13 264);
+  --accent-soft: oklch(0.28 0.06 264);
+  --on-accent: oklch(1 0 0);
+
+  --success: oklch(0.78 0.15 152);
+  --success-soft: oklch(0.28 0.05 152);
+  --danger: oklch(0.72 0.16 27);
+  --danger-soft: oklch(0.29 0.06 27);
+  --warning: oklch(0.8 0.13 75);
+  --warning-soft: oklch(0.3 0.05 75);
+  --sale: oklch(0.72 0.16 27);
+  --sale-soft: oklch(0.29 0.06 27);
+  --rating: oklch(0.8 0.14 80);
+  --scrim: oklch(0.06 0.01 265 / 0.68);
+}
+
+/* Derived from the dials. Named --r-*, not --radius-*, so they cannot collide
+   with Tailwind's own default radius scale before the contract re-points it. */
+:root {
+  --r-sm: calc(var(--dial-radius) * 0.25rem);
+  --r-md: calc(var(--dial-radius) * 0.375rem);
+  --r-lg: calc(var(--dial-radius) * 0.5rem);
+  --r-xl: calc(var(--dial-radius) * 0.75rem);
+  --r-2xl: calc(var(--dial-radius) * 1rem);
+
+  --sh-sm: 0 1px 2px 0 oklch(0 0 0 / calc(0.05 * var(--dial-shadow)));
+  --sh-md:
+    0 1px 3px 0 oklch(0 0 0 / calc(0.08 * var(--dial-shadow))),
+    0 1px 2px -1px oklch(0 0 0 / calc(0.06 * var(--dial-shadow)));
+  --sh-lg:
+    0 4px 12px -2px oklch(0 0 0 / calc(0.1 * var(--dial-shadow))),
+    0 2px 4px -2px oklch(0 0 0 / calc(0.06 * var(--dial-shadow)));
+  --sh-xl: 0 16px 40px -12px oklch(0 0 0 / calc(0.22 * var(--dial-shadow)));
+}
+
+/* 3. CONTRACT — what components are allowed to name -------------------------
+ * Everything here becomes a Tailwind utility: `--color-ink` -> `text-ink`,
+ * `--radius-card` -> `rounded-card`, `--ease-out-soft` -> `ease-out-soft`.
+ * Components reference these names and nothing else.
+ * -------------------------------------------------------------------------- */
+
+@theme inline {
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-surface-sunken: var(--surface-sunken);
+  --color-surface-hover: var(--surface-hover);
+
+  --color-ink: var(--ink);
+  --color-ink-hover: var(--ink-hover);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-subtle: var(--ink-subtle);
+  --color-on-ink: var(--on-ink);
+
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-active: var(--accent-active);
+  --color-accent-text: var(--accent-text);
+  --color-accent-soft: var(--accent-soft);
+  --color-on-accent: var(--on-accent);
+
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-sale: var(--sale);
+  --color-sale-soft: var(--sale-soft);
+  --color-rating: var(--rating);
+  --color-scrim: var(--scrim);
+
+  --color-ring: var(--ring);
+
+  /* Radius. The standard scale is re-pointed at the dial too, so a component
+     that reaches for `rounded-lg` still answers to the same knob. */
+  --radius-sm: var(--r-sm);
+  --radius-md: var(--r-md);
+  --radius-lg: var(--r-lg);
+  --radius-xl: var(--r-xl);
+  --radius-2xl: var(--r-2xl);
+  --radius-control: var(--r-sm);
+  --radius-card: var(--r-md);
+  --radius-panel: var(--r-lg);
+
+  --shadow-sm: var(--sh-sm);
+  --shadow-md: var(--sh-md);
+  --shadow-lg: var(--sh-lg);
+  --shadow-xl: var(--sh-xl);
+
+  /* Typography. Inter is loaded in BaseLayout with font-display: swap; the
+     fallback stack is metric-adjacent so the swap does not reflow the page. */
+  --font-sans:
+    'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue',
+    sans-serif;
+
+  /* Display sizes for page and section headings. Tailwind's own text-xs..text-xl
+     scale is untouched and still available for body copy. */
+  --text-display-sm: 1.5rem;
+  --text-display-sm--line-height: 1.2;
+  --text-display-sm--letter-spacing: -0.016em;
+  --text-display-md: 2rem;
+  --text-display-md--line-height: 1.15;
+  --text-display-md--letter-spacing: -0.02em;
+  --text-display-lg: 2.75rem;
+  --text-display-lg--line-height: 1.05;
+  --text-display-lg--letter-spacing: -0.028em;
+  --text-display-xl: 3.5rem;
+  --text-display-xl--line-height: 1;
+  --text-display-xl--letter-spacing: -0.032em;
+
+  /* Motion. Exits are ~65% of entrances so dismissing feels immediate. */
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-soft: cubic-bezier(0.5, 0, 0.75, 0);
+  --ease-spring: cubic-bezier(0.34, 1.4, 0.64, 1);
+
+  --animate-fade-in: fade-in 180ms var(--ease-out-soft);
+  --animate-scale-in: scale-in 160ms var(--ease-out-soft);
+  --animate-slide-in-right: slide-in-right 260ms var(--ease-out-soft);
+  --animate-shimmer: shimmer 1.6s linear infinite;
+
+  /* Section rhythm, driven by the dial. */
+  --spacing-section: calc(var(--dial-rhythm) * 3rem);
+  --spacing-section-lg: calc(var(--dial-rhythm) * 4.5rem);
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+}
+
+@keyframes slide-in-right {
+  from {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}

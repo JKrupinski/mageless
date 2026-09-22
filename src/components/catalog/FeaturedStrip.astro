@@ -1,0 +1,38 @@
+---
+import { ProductGrid } from '@/components/product/ProductGrid';
+import type { ProductCardData } from '@/components/product/ProductCard';
+
+interface Props {
+  /** The Category the strip is borrowed from. */
+  name: string;
+  href: string;
+  /** How many products that Category holds — not the length of the strip. */
+  totalCount: number;
+  products: readonly (ProductCardData | null)[];
+  locale: string;
+  class?: string;
+}
+
+const { name, href, totalCount, products, locale, class: className } = Astro.props;
+---
+
+{
+  /* One merchandised row, shared by the home page and a Category Landing.
+    Both borrow a handful of products from a Category the shopper has not
+    reached yet, and the heading doubles as the way in — so the count in the
+    link belongs to that Category, not to the strip and not to the page. */
+}
+<section class:list={['mt-section', className]} aria-labelledby="featured">
+  <div class="flex items-baseline justify-between gap-4 border-b border-line pb-4">
+    <h2 id="featured" class="text-display-sm font-semibold text-ink">{name}</h2>
+    <a
+      href={href}
+      class="shrink-0 text-sm font-medium text-accent-text underline-offset-4 hover:underline"
+    >
+      View all {totalCount}
+      <span class="sr-only"> {name} products</span>
+    </a>
+  </div>
+  {/* Rendered on the server with zero client JavaScript. */}
+  <ProductGrid className="mt-8" products={products} locale={locale} priorityCount={4} />
+</section>

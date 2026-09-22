@@ -21,7 +21,7 @@ export function CartWidget({ initialCart, locale = 'en-US' }: CartWidgetProps) {
       <button
         type="button"
         onClick={openCartDrawer}
-        className="relative inline-flex size-10 items-center justify-center rounded-[--radius-control] text-ink hover:bg-surface-muted"
+        className="relative inline-flex size-10 cursor-pointer items-center justify-center rounded-control text-ink transition-colors duration-150 ease-out-soft hover:bg-surface-hover"
         aria-label={count > 0 ? `Open cart, ${count} items` : 'Open cart'}
       >
         <svg
@@ -41,11 +41,24 @@ export function CartWidget({ initialCart, locale = 'en-US' }: CartWidgetProps) {
           <circle cx="18" cy="20" r="1.2" />
         </svg>
         {count > 0 ? (
-          <span className="absolute -top-0.5 -right-0.5 min-w-5 rounded-full bg-brand-600 px-1 text-center text-xs font-semibold text-white">
-            {count}
+          <span
+            aria-hidden="true"
+            className="numeric absolute -top-0.5 -right-0.5 min-w-[1.25rem] rounded-full bg-accent px-1 text-center text-[0.6875rem] leading-5 font-semibold text-on-accent"
+          >
+            {count > 99 ? '99+' : count}
           </span>
         ) : null}
       </button>
+
+      {/*
+        The badge is aria-hidden and the count is announced here instead. A
+        live region on the badge itself would read a bare number ("3") with no
+        context; this reads the whole phrase, and politely, so adding to the
+        cart never interrupts what the shopper is doing.
+      */}
+      <span aria-live="polite" className="sr-only">
+        {count > 0 ? `Cart: ${count} ${count === 1 ? 'item' : 'items'}` : 'Cart is empty'}
+      </span>
       <CartDrawer initialCart={initialCart} locale={locale} />
     </>
   );
