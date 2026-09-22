@@ -1,9 +1,15 @@
 import type { ResultOf } from 'gql.tada';
 import type { CategoryPageQuery } from '../graphql/queries/catalog';
 import type { ProductCardData } from '@/components/product/ProductCard';
-import { FILTERABLE_ATTRIBUTES, buildProductFilters, toFacets, type Facet } from '../catalog';
+import {
+  FILTERABLE_ATTRIBUTES,
+  buildProductFilters,
+  toFacets,
+  type CategoryLink,
+  type Facet,
+} from '../catalog';
 import { breadcrumbJsonLd, itemListJsonLd } from '../seo/jsonld';
-import { productUrl, toPlainText } from '../format';
+import { categoryUrl, productUrl, toPlainText } from '../format';
 
 type CategoryPageResult = ResultOf<typeof CategoryPageQuery>;
 
@@ -12,14 +18,6 @@ export type CategoryNode = NonNullable<
 >;
 
 type CategoryProducts = CategoryPageResult['products'];
-
-/** A direct child of the Category, as a tile a shopper can descend through. */
-export interface SubcategoryTile {
-  uid: string;
-  name: string;
-  href: string;
-  productCount: number | null;
-}
 
 /** A paginated, faceted page of the products assigned to this Category. */
 export interface CategoryListing {
@@ -49,7 +47,7 @@ export interface CategoryViewModel {
   descriptionHtml: string | null;
   breadcrumbs: { name: string; href: string }[];
   /** Empty unless the Display Mode presents Subcategories. */
-  subcategories: SubcategoryTile[];
+  subcategories: CategoryLink[];
   /** Null unless the Display Mode presents a listing, or products demand one. */
   listing: CategoryListing | null;
   /** Null unless a Category Landing needs merchandising it cannot supply itself. */
@@ -96,10 +94,9 @@ interface DescendantNode {
   product_count?: number | null;
 }
 
-type ChildNode = DescendantNode & { children?: readonly (DescendantNode | null)[] | null };
-
-const href = (node: { url_path?: string | null; url_suffix?: string | null }) =>
-  `/${node.url_path ?? ''}${node.url_suffix ?? ''}`;
+type SubcategoryNode = DescendantNode & {
+  children?: readonly (DescendantNode | null)[] | null;
+};
 
 /**
  * Magento's own vocabulary for what a Category presents. `display_mode` is
@@ -115,35 +112,36 @@ function presentation(displayMode: string | null | undefined) {
   };
 }
 
-const visible = <T extends DescendantNode>(child: T | null): child is T =>
-  Boolean(child && child.include_in_menu);
+const visible = <T extends DescendantNode>(subcategory: T | null): subcategory is T =>
+  Boolean(subcategory && subcategory.include_in_menu);
 
-function toTile(child: DescendantNode): SubcategoryTile {
+function toTile(subcategory: DescendantNode): CategoryLink {
   return {
-    uid: child.uid,
-    name: child.name ?? '',
-    href: href(child),
-    productCount: child.product_count ?? null,
+    uid: subcategory.uid,
+    name: subcategory.name ?? '',
+    href: categoryUrl(subcategory),
+    productCount: subcategory.product_count ?? null,
   };
 }
 
 /**
  * The busiest descendant worth merchandising.
  *
- * Searches grandchildren as well as children, because a department's own
- * Subcategories are frequently Landings too: Women → Tops carries products,
- * but a tree one level deeper may be where the stock actually sits. A
- * descendant with no products is no use as a strip, so it is skipped rather
- * than fetched and discarded.
+ * Searches two levels down, because a Category Landing's own Subcategories are
+ * frequently Landings too: Women → Tops carries products, but a tree one level
+ * deeper may be where the stock actually sits. A descendant with no products
+ * is no use as a strip, so it is skipped rather than fetched and discarded.
  */
-function busiestDescendant(children: readonly (ChildNode | null)[]): DescendantNode | null {
-  const candidates: DescendantNode[] = children
+function busiestDescendant(
+  subcategories: readonly (SubcategoryNode | null)[],
+): DescendantNode | null {
+  const candidates: DescendantNode[] = subcategories
     .filter(visible)
-    .flatMap((child) => [child, ...(child.children ?? []).filter(visible)]);
+    .flatMap((subcategory) => [subcategory, ...(subcategory.children ?? []).filter(visible)]);
 
   return (
     candidates
-      .filter((child) => (child.product_count ?? 0) > 0)
+      .filter((subcategory) => (subcategory.product_count ?? 0) > 0)
       .sort((a, b) => (b.product_count ?? 0) - (a.product_count ?? 0))[0] ?? null
   );
 }
@@ -175,9 +173,15 @@ export async function toCategoryViewModel(
    * the Display Mode strictly would hide them, and unlike Luma we have no
    * Widget Content to put in that space (ADR-0002) — so a Landing with its own
    * products shows them.
+   *
+   * The signal is the Category's own `product_count`, never the `total_count`
+   * of the page below: that one is filtered, so a filter matching nothing
+   * would drop the listing — facet panel, toolbar and all — out from under a
+   * shopper mid-browse, and silently replace it with a merchandising strip
+   * whose products read as if they were the results.
    */
   const listing: CategoryListing | null =
-    presents.listing || totalCount > 0
+    presents.listing || (node.product_count ?? 0) > 0
       ? {
           products: items,
           facets: toFacets(products?.aggregations),
@@ -196,7 +200,7 @@ export async function toCategoryViewModel(
     source && strip && strip.products.length > 0
       ? {
           name: source.name ?? '',
-          href: href(source),
+          href: categoryUrl(source),
           totalCount: strip.totalCount,
           products: strip.products,
         }
@@ -213,7 +217,7 @@ export async function toCategoryViewModel(
           ]
         : [],
     ),
-    { name: node.name ?? '', href: href(node) },
+    { name: node.name ?? '', href: categoryUrl(node) },
   ];
 
   // Structured data describes what the page rendered, which on a Landing is the

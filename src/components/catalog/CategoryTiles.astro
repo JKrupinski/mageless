@@ -1,8 +1,8 @@
 ---
-import type { SubcategoryTile } from '@lib/viewmodels/category';
+import type { CategoryLink } from '@lib/catalog';
 
 interface Props {
-  categories: readonly SubcategoryTile[];
+  categories: readonly CategoryLink[];
   /** Tiles per row at the largest breakpoint. */
   columns?: 3 | 6;
   class?: string;
@@ -17,9 +17,8 @@ const COLUMNS = {
 ---
 
 {
-  /* The same tile serves the home page's department row and a Category
-    Landing's Subcategories. They are the same thing to a shopper — a way into
-    a part of the catalogue — and were drifting apart as two copies. */
+  /* The same tile serves the home page's top-level row and a Category
+    Landing's Subcategories; `CategoryLink` is what makes them one shape. */
 }
 <ul class:list={['grid gap-3', COLUMNS[columns], className]}>
   {

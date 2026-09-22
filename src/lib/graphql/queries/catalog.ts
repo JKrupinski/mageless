@@ -86,8 +86,8 @@ export const HomeQuery = graphql(
  *
  * The Subcategory tree comes back two levels deep. The first level is what a
  * Category Landing renders as tiles; the second exists only so the landing can
- * pick a busy descendant to merchandise, since a department's own children are
- * often Landings too and carry no products a shopper could see.
+ * pick a busy descendant to merchandise, since a Category Landing's own
+ * Subcategories are often Landings too and carry no products a shopper sees.
  */
 export const CategoryPageQuery = graphql(
   `

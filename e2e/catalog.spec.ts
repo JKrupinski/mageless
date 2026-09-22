@@ -10,12 +10,12 @@ test.describe('catalogue browsing', () => {
   });
 
   /*
-   * The defect this replaced: every department rendered an empty grid with a
+   * The defect this replaced: every Category Landing rendered an empty grid with a
    * "no products matched" message and no route onward, because Magento's
    * GraphQL returns no products for a Category Landing and does not roll its
    * descendants up the way its own PHP storefront does.
    */
-  test('a department offers a way down to a product listing', async ({ page }) => {
+  test('a Category Landing offers a way down to a product listing', async ({ page }) => {
     await page.goto('/women.html');
 
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Women');
@@ -33,7 +33,7 @@ test.describe('catalogue browsing', () => {
    * Gear reports the same Display Mode as Women, and has 33 products assigned
    * to it directly. Honouring Display Mode strictly would hide them.
    */
-  test('a department with products of its own shows both', async ({ page }) => {
+  test('a Category Landing with products of its own shows both', async ({ page }) => {
     await page.goto('/gear.html');
 
     await expect(page.getByRole('heading', { name: 'Shop Gear' })).toBeVisible();

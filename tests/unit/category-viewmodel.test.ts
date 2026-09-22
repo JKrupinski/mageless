@@ -187,6 +187,54 @@ describe('toCategoryViewModel', () => {
     expect(model.featured).toBeNull();
   });
 
+  /*
+   * Found by review, not by these tests: the listing used to be decided from
+   * the *filtered* `total_count`, so on Gear a filter that matched nothing
+   * dropped the listing, its toolbar and its facet panel, and put a
+   * merchandising strip in their place whose products read as the results.
+   */
+  it('keeps the listing of a Category Landing when a filter excludes everything', async () => {
+    const model = await toCategoryViewModel(
+      {
+        node: makeNode({ name: 'Gear', display_mode: 'PAGE', product_count: 33 }),
+        products: makeProducts(0),
+        siteUrl: SITE,
+        url: url('?color=9999999'),
+      },
+      deps(),
+    );
+
+    expect(model.listing).not.toBeNull();
+    expect(model.listing?.filtered).toBe(true);
+    expect(model.listing?.totalCount).toBe(0);
+    expect(model.featured).toBeNull();
+  });
+
+  it('decides the listing from the Category, not from the page of products', async () => {
+    // Same filtered page, opposite Categories: only `product_count` differs.
+    const landing = await toCategoryViewModel(
+      {
+        node: makeNode({ product_count: 0 }),
+        products: makeProducts(0),
+        siteUrl: SITE,
+        url: url('?color=9999999'),
+      },
+      deps(),
+    );
+    const withStock = await toCategoryViewModel(
+      {
+        node: makeNode({ product_count: 33 }),
+        products: makeProducts(0),
+        siteUrl: SITE,
+        url: url('?color=9999999'),
+      },
+      deps(),
+    );
+
+    expect(landing.listing).toBeNull();
+    expect(withStock.listing).not.toBeNull();
+  });
+
   describe('merchandising strip', () => {
     it('draws from the busiest Subcategory', async () => {
       const fetchFeatured = deps();

@@ -3,6 +3,7 @@ import { PackageOpen } from 'lucide-react';
 import { ProductGrid } from '@/components/product/ProductGrid';
 import Breadcrumbs from '@/components/layout/Breadcrumbs.astro';
 import CategoryTiles from '@/components/catalog/CategoryTiles.astro';
+import FeaturedStrip from '@/components/catalog/FeaturedStrip.astro';
 import FacetSidebar from '@/components/layout/FacetSidebar.astro';
 import Pagination from '@/components/layout/Pagination.astro';
 import { SORT_OPTIONS } from '@lib/catalog';
@@ -131,29 +132,13 @@ const empty = listing?.filtered
 
 {
   featured && (
-    <section class="mt-section" aria-labelledby="featured">
-      <div class="flex items-baseline justify-between gap-4 border-b border-line pb-4">
-        <h2 id="featured" class="text-display-sm font-semibold text-ink">
-          {featured.name}
-        </h2>
-        {/* The link carries the Subcategory's own total. The strip above is a
-            handful of its products, not a roll-up of this Category — those are
-            deliberately different numbers. */}
-        <a
-          href={featured.href}
-          class="shrink-0 text-sm font-medium text-accent-text underline-offset-4 hover:underline"
-        >
-          View all {featured.totalCount}
-          <span class="sr-only"> {featured.name} products</span>
-        </a>
-      </div>
-      <ProductGrid
-        className="mt-8"
-        products={featured.products}
-        locale={locale}
-        priorityCount={4}
-      />
-    </section>
+    <FeaturedStrip
+      name={featured.name}
+      href={featured.href}
+      totalCount={featured.totalCount}
+      products={featured.products}
+      locale={locale}
+    />
   )
 }
 

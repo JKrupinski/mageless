@@ -1,7 +1,7 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
-import { ProductGrid } from '@/components/product/ProductGrid';
 import CategoryTiles from '@/components/catalog/CategoryTiles.astro';
+import FeaturedStrip from '@/components/catalog/FeaturedStrip.astro';
 import { execute } from '@lib/graphql/client';
 import { HomeQuery } from '@lib/graphql/queries/catalog';
 import { getNavigation, getStoreConfig } from '@lib/catalog';
@@ -106,27 +106,13 @@ const totalProducts = categories.reduce((sum, c) => sum + (c.productCount ?? 0),
 
   {
     featuredCategory && (
-      <section class="mt-section" aria-labelledby="featured">
-        <div class="flex items-baseline justify-between gap-4 border-b border-line pb-4">
-          <h2 id="featured" class="text-display-sm font-semibold text-ink">
-            {featuredCategory.name}
-          </h2>
-          <a
-            href={featuredCategory.href}
-            class="shrink-0 text-sm font-medium text-accent-text underline-offset-4 hover:underline"
-          >
-            View all {data.products?.total_count ?? 0}
-            <span class="sr-only"> {featuredCategory.name} products</span>
-          </a>
-        </div>
-        {/* Rendered on the server with zero client JavaScript. */}
-        <ProductGrid
-          className="mt-8"
-          products={data.products?.items ?? []}
-          locale={store.locale}
-          priorityCount={4}
-        />
-      </section>
+      <FeaturedStrip
+        name={featuredCategory.name}
+        href={featuredCategory.href}
+        totalCount={data.products?.total_count ?? 0}
+        products={data.products?.items ?? []}
+        locale={store.locale}
+      />
     )
   }
 </BaseLayout>
