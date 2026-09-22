@@ -18,6 +18,33 @@ export default defineConfig({
   integrations: [react()],
   vite: {
     plugins: [tailwindcss()],
+    optimizeDeps: {
+      /*
+       * Every bare dependency an island can reach, pre-bundled at startup.
+       *
+       * `node_modules/.vite/deps` is shared by every Vite instance in the
+       * project, and `astro sync` — which the editor extension and `astro
+       * check` both run — rewrites it from an SSR-only scan. Without this list
+       * the running dev server has already discovered the island-only packages
+       * on demand, so the sync deletes files it is still serving URLs for and
+       * every island dies on a 504 "Outdated Optimize Dep". Naming them here
+       * makes both scans produce the same set, so the rewrite is a no-op.
+       */
+      include: [
+        'react',
+        'react-dom',
+        'react-dom/client',
+        'react/jsx-runtime',
+        'react/jsx-dev-runtime',
+        '@nanostores/react',
+        'nanostores',
+        'react-hook-form',
+        '@hookform/resolvers/zod',
+        'zod',
+        'lucide-react',
+        'radix-ui',
+      ],
+    },
     resolve: {
       alias: {
         '@': new URL('./src', import.meta.url).pathname,
