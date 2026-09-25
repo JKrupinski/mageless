@@ -77,19 +77,6 @@ const metaDescription = description || store.defaultDescription;
     <link rel="preconnect" href={import.meta.env.PUBLIC_MAGENTO_BASE_URL} crossorigin />
 
     {
-      /* Inter, variable, with `display=swap` so text is never invisible while
-        it loads. The fallback stack in --font-sans is metrically close, which
-        keeps the swap from reflowing the page (CLS). Self-hosting instead is
-        one edit — see docs/THEMING.md. */
-    }
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400..700&display=swap"
-    />
-
-    {
       /* Applies the stored theme before first paint. Inline and synchronous on
         purpose: deferring it would show one frame of the wrong theme. */
     }
