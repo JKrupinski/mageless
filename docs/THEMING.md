@@ -155,19 +155,26 @@ Two composite classes in `global.css` are worth knowing:
 
 ## Typography
 
-Inter is loaded from Google Fonts in `BaseLayout.astro` with `display=swap`, and
-the fallback stack in `--font-sans` is metrically close so the swap does not
-reflow the page.
+Inter is self-hosted: the variable-weight woff2 files live in `public/fonts/inter/`
+and `src/styles/fonts.css` declares one `@font-face` per Unicode subset, each with
+`font-display: swap` so text is never invisible while it loads. The fallback stack
+in `--font-sans` is metrically close, so the swap does not reflow the page (CLS).
 
-To self-host it instead — which you probably want in the EU, since the Google
-Fonts request exposes visitor IPs to a third party — drop the two `preconnect`
-links and the stylesheet `<link>`, put the woff2 files in `public/fonts/`, and
-add an `@font-face` with `font-display: swap` to `global.css`. `--font-sans`
-needs no change.
+It used to load from Google Fonts, which meant a render-blocking cross-origin
+request (DNS + TLS before the stylesheet even arrives) and handed every visitor's
+IP to Google. Self-hosting removes both. A browser still only downloads the
+subset a page's text actually needs — `unicode-range` decides that, exactly as
+Google's own stylesheet did — so an English-only storefront still fetches just
+`inter-latin.woff2`.
 
-To use a different family, change `--font-sans` in the `@theme inline` block.
-The display sizes (`--text-display-*`) carry their own negative tracking, tuned
-for Inter; a different family will want different values.
+To pick up a new Inter release, regenerate `src/styles/fonts.css` and the files
+in `public/fonts/inter/` from `@fontsource-variable/inter` (`npm pack` it, or add
+it as a dependency and copy its `files/*-wght-normal.woff2` and `wght.css`).
+
+To use a different family, change `--font-sans` in the `@theme inline` block and
+swap in that family's own self-hosted `@font-face` rules. The display sizes
+(`--text-display-*`) carry their own negative tracking, tuned for Inter; a
+different family will want different values.
 
 ## Adding a component
 
