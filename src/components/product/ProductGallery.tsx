@@ -1,5 +1,7 @@
 import { useState } from 'react';
+import { Picture } from '@ui/Picture';
 import { classNames } from '@lib/format';
+import { IMAGE_PRESETS } from '@lib/images';
 
 export interface GalleryImage {
   url: string;
@@ -26,8 +28,9 @@ export function ProductGallery({ images, productName }: ProductGalleryProps) {
   return (
     <div className="flex flex-col gap-3">
       <div className="overflow-hidden rounded-card bg-surface-sunken">
-        <img
+        <Picture
           src={current.url}
+          preset={IMAGE_PRESETS.gallery}
           alt={current.label ?? productName}
           width={800}
           height={1000}
@@ -55,8 +58,9 @@ export function ProductGallery({ images, productName }: ProductGalleryProps) {
                     : 'outline-transparent hover:outline-line-strong',
                 )}
               >
-                <img
+                <Picture
                   src={image.url}
+                  preset={IMAGE_PRESETS.thumbnail}
                   alt=""
                   width={72}
                   height={90}

@@ -1,9 +1,11 @@
 import type { FragmentOf } from 'gql.tada';
 import type { ProductCardFragment } from '@lib/graphql/fragments';
 import { Badge } from '@ui/Badge';
+import { Picture } from '@ui/Picture';
 import { Price } from '@ui/Price';
 import { Rating } from '@ui/Rating';
 import { classNames, productUrl } from '@lib/format';
+import { IMAGE_PRESETS } from '@lib/images';
 
 export type ProductCardData = FragmentOf<typeof ProductCardFragment>;
 
@@ -40,8 +42,9 @@ export function ProductCard({
       <div className="relative overflow-hidden rounded-card bg-surface-sunken">
         <div className="aspect-4/5">
           {product.small_image?.url ? (
-            <img
+            <Picture
               src={product.small_image.url}
+              preset={IMAGE_PRESETS.tile}
               alt={product.small_image.label ?? product.name ?? ''}
               width={360}
               height={450}
