@@ -225,8 +225,13 @@ box is a plain `GET /search` form, and facets are links.
 
 - Above-the-fold product tiles are `fetchpriority="high"` and eager; everything below is
   lazy. The product gallery's main image is the LCP element and is treated the same way.
-- `<link rel="preconnect">` to the Magento media origin, since catalogue images come from
-  there and are discovered late.
+- Product tiles and the gallery are `<picture>` elements with AVIF and WebP `srcset`s (and a
+  single JPEG fallback), re-encoded from Magento's image by Astro's `/_image` endpoint at the
+  widths in [`src/lib/images.ts`](src/lib/images.ts). The endpoint only fetches from the host
+  in `PUBLIC_MAGENTO_BASE_URL`, and it encodes on every request it receives — it has no cache
+  of its own. Responses are `Cache-Control: public, max-age=31536000`, so in production put a
+  CDN or caching reverse proxy in front of `/_image`; without one, every visitor's first view
+  of an image costs a sharp encode (~0.1–0.3 s for AVIF).
 - Category HTML gets `s-maxage=60, stale-while-revalidate=300`; the cart and API routes are
   `private, no-store` (see [`src/middleware.ts`](src/middleware.ts)).
 - Structured data is built from the same GraphQL data the page renders, so it cannot drift:
@@ -266,9 +271,7 @@ Not implemented, in rough order of what would come next:
 3. **CMS pages** — `route()` already resolves them; only the renderer is missing.
 4. **Cache invalidation** — TTLs only today. A Magento webhook or a queue consumer calling
    `cachePurge()` on reindex would let the TTLs go up a lot.
-5. **Image optimisation** — Magento serves pre-sized cache images; an image CDN in front
-   would allow AVIF/WebP and proper `srcset`.
-6. **Real monitoring** — the structure is there (healthcheck, cache logging), but Elastic
+5. **Real monitoring** — the structure is there (healthcheck, cache logging), but Elastic
    Synthetics or equivalent still needs wiring up.
 
 ## Known environment issue

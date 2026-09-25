@@ -11,6 +11,7 @@ export {
   DialogTitle,
   DialogTrigger,
 } from './Dialog';
+export { Picture, type PictureProps } from './Picture';
 export { Price, type PriceProps } from './Price';
 export { QuantityStepper, type QuantityStepperProps } from './QuantityStepper';
 export { RadioGroup, RadioGroupItem } from './RadioGroup';

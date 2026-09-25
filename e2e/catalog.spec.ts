@@ -91,6 +91,26 @@ test.describe('catalogue browsing', () => {
     ).toHaveAttribute('aria-current', 'page');
   });
 
+  /*
+   * The unit tests pin down the markup; this is the only check that the image
+   * endpoint really fetches from Magento and re-encodes, since a misconfigured
+   * `image.domains` answers 403 and leaves every tile blank.
+   */
+  test('product tiles load re-encoded images from the image endpoint', async ({ page }) => {
+    await page.goto('/gear/bags.html');
+
+    const image = page.locator('article img').first();
+    await expect(image).toHaveAttribute('fetchpriority', 'high');
+    await expect
+      .poll(() => image.evaluate((element: HTMLImageElement) => element.naturalWidth))
+      .toBeGreaterThan(0);
+
+    // Chromium supports AVIF, so it must pick the first <source>.
+    const chosen = await image.evaluate((element: HTMLImageElement) => element.currentSrc);
+    expect(chosen).toContain('/_image?');
+    expect(chosen).toContain('f=avif');
+  });
+
   test('an unknown URL returns a real 404', async ({ page }) => {
     const response = await page.goto('/this-does-not-exist.html');
     expect(response?.status()).toBe(404);

@@ -71,12 +71,6 @@ const metaDescription = description || store.defaultDescription;
     <meta name="twitter:card" content={image ? 'summary_large_image' : 'summary'} />
 
     {
-      /* Magento serves catalogue images from its own origin: warm the
-        connection before the first <img> is discovered. */
-    }
-    <link rel="preconnect" href={import.meta.env.PUBLIC_MAGENTO_BASE_URL} crossorigin />
-
-    {
       /* Applies the stored theme before first paint. Inline and synchronous on
         purpose: deferring it would show one frame of the wrong theme. */
     }

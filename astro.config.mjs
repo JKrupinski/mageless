@@ -1,8 +1,16 @@
 // @ts-check
-import { defineConfig, envField } from 'astro/config';
+import { defineConfig, envField, sharpImageService } from 'astro/config';
 import node from '@astrojs/node';
 import react from '@astrojs/react';
 import tailwindcss from '@tailwindcss/vite';
+import { loadEnv } from 'vite';
+
+// `.env` is not in `process.env` while this file is evaluated; read it the way
+// Vite will, so the config sees the same values the app does. `astro dev` is
+// the only command that runs in development mode.
+const mode = process.env.NODE_ENV ?? (process.argv.includes('dev') ? 'development' : 'production');
+const env = loadEnv(mode, process.cwd(), '');
+const magentoHost = env.PUBLIC_MAGENTO_BASE_URL && new URL(env.PUBLIC_MAGENTO_BASE_URL).hostname;
 
 /**
  * SSR-first configuration.
@@ -61,9 +69,20 @@ export default defineConfig({
     inlineStylesheets: 'auto',
   },
   image: {
-    // Magento serves catalogue media from its own domain.
-    domains: ['magento.test'],
-    remotePatterns: [{ protocol: 'https' }],
+    /*
+     * Catalogue images are re-encoded through `/_image` (see src/lib/images.ts),
+     * which fetches whatever `href` it is given from the hosts allowed here.
+     * Allowing only Magento's own host keeps the endpoint from being an open
+     * image proxy for the rest of the internet. Without a base URL nothing is
+     * allowed, rather than a guessed host.
+     */
+    domains: magentoHost ? [magentoHost] : [],
+    /*
+     * The endpoint encodes on request, so encoder speed is on the LCP path of
+     * an uncached image. At sharp's default AVIF effort (4) a 720px product
+     * photo took ~1.1s; effort 2 takes ~0.24s for a file ~10% larger.
+     */
+    service: sharpImageService({ avif: { effort: 2 } }),
   },
   prefetch: {
     prefetchAll: true,
