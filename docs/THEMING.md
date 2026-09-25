@@ -61,10 +61,20 @@ sliders on `/design` to find the value you want before committing it.
 
 Dark is not an inversion. Surfaces get _lighter_ as they come forward, chroma
 comes down so saturated hues do not vibrate on a dark field, and status colours
-move to the light end of their ramp. Both themes are defined in `tokens.css`:
+move to the light end of their ramp.
+
+Each dark colour is written once, as `--dark-<token>` beside its light value
+(`--dark-canvas` for `--canvas`). A switch in `tokens.css` points each token at
+its dark value when either of these asks for dark:
 
 - `@media (prefers-color-scheme: dark)` — follows the operating system
 - `[data-theme='dark']` — set by the toggle in the header, overrides the OS
+
+So to change a dark colour, edit its `--dark-*` value and nothing else. A skin in
+`skins.css` does the same: it redefines `--dark-*` and never restates the switch.
+Adding a new themed token means a light value, a `--dark-*` value, and one line
+in each half of the switch; `tests/unit/theme-tokens.test.ts` fails if any of
+those is missing or the two halves drift apart.
 
 `ThemeToggle` cycles system → light → dark and stores the choice under
 `mageless:theme`. An inline script in `BaseLayout.astro` applies it before first
