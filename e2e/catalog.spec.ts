@@ -111,6 +111,31 @@ test.describe('catalogue browsing', () => {
     expect(chosen).toContain('f=avif');
   });
 
+  /*
+   * Varies one real rendered URL, so the only difference between the 200 and
+   * each 400 is the parameter the endpoint must refuse.
+   */
+  test('the image endpoint serves only the variants the storefront renders', async ({ page }) => {
+    await page.goto('/gear/bags.html');
+
+    const image = page.locator('article img').first();
+    await expect
+      .poll(() => image.evaluate((element: HTMLImageElement) => element.naturalWidth))
+      .toBeGreaterThan(0);
+    const rendered = await image.evaluate((element: HTMLImageElement) => element.currentSrc);
+
+    const fetchWith = (change: (params: URLSearchParams) => void) => {
+      const url = new URL(rendered);
+      change(url.searchParams);
+      return page.request.get(url.href);
+    };
+
+    expect((await fetchWith(() => {})).status()).toBe(200);
+    expect((await fetchWith((params) => params.set('w', '500'))).status()).toBe(400);
+    expect((await fetchWith((params) => params.set('f', 'png'))).status()).toBe(400);
+    expect((await fetchWith((params) => params.set('q', '100'))).status()).toBe(400);
+  });
+
   test('an unknown URL returns a real 404', async ({ page }) => {
     const response = await page.goto('/this-does-not-exist.html');
     expect(response?.status()).toBe(404);

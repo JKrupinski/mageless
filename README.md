@@ -228,7 +228,9 @@ box is a plain `GET /search` form, and facets are links.
 - Product tiles and the gallery are `<picture>` elements with AVIF and WebP `srcset`s (and a
   single JPEG fallback), re-encoded from Magento's image by Astro's `/_image` endpoint at the
   widths in [`src/lib/images.ts`](src/lib/images.ts). The endpoint only fetches from the host
-  in `PUBLIC_MAGENTO_BASE_URL`, and it encodes on every request it receives — it has no cache
+  in `PUBLIC_MAGENTO_BASE_URL`, and only serves the widths and formats those presets render:
+  any other width, format or transform parameter (such as `q`) is refused with 400 before
+  anything is fetched or encoded. It encodes on every request it accepts — it has no cache
   of its own. Responses are `Cache-Control: public, max-age=31536000`, so in production put a
   CDN or caching reverse proxy in front of `/_image`; without one, every visitor's first view
   of an image costs a sharp encode (~0.1–0.3 s for AVIF).
