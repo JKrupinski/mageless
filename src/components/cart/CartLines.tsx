@@ -12,6 +12,8 @@ import type { CartSummary } from '@lib/cart/types';
 import { Button } from '@ui/Button';
 import { QuantityStepper } from '@ui/QuantityStepper';
 import { formatMoney } from '@lib/format';
+import { Picture } from '@ui/Picture';
+import { IMAGE_PRESETS } from '@lib/images';
 
 export interface CartLinesProps {
   initialCart: CartSummary;
@@ -78,8 +80,9 @@ export function CartLines({ initialCart, locale = 'en-US' }: CartLinesProps) {
               className="grid grid-cols-[5rem_1fr] gap-x-4 gap-y-4 py-5 sm:grid-cols-[6rem_1fr_auto]"
             >
               {item.image ? (
-                <img
+                <Picture
                   src={item.image}
+                  preset={IMAGE_PRESETS.cartLine}
                   alt=""
                   width={96}
                   height={120}

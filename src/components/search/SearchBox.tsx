@@ -1,6 +1,8 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { Search } from 'lucide-react';
 import { classNames, formatMoney, type MoneyLike } from '@lib/format';
+import { Picture } from '@ui/Picture';
+import { IMAGE_PRESETS } from '@lib/images';
 
 interface Suggestion {
   uid: string;
@@ -182,8 +184,9 @@ export function SearchBox({
               )}
             >
               {suggestion.image ? (
-                <img
+                <Picture
                   src={suggestion.image}
+                  preset={IMAGE_PRESETS.suggestion}
                   alt=""
                   width={40}
                   height={50}

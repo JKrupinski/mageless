@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { waitForIsland } from './helpers';
+import { expectReencodedImage, waitForIsland } from './helpers';
 
 test.describe('product page and cart', () => {
   test('a configurable product requires options before it can be added', async ({ page }) => {
@@ -54,6 +54,16 @@ test.describe('product page and cart', () => {
 
     await page.reload();
     await expect(page.getByRole('link', { name: 'Joust Duffle Bag' })).toBeVisible();
+  });
+
+  test('cart lines show thumbnails re-encoded by the image endpoint', async ({ page }) => {
+    await page.goto('/joust-duffle-bag.html');
+    await waitForIsland(page, 'AddToCartForm');
+    await page.getByRole('button', { name: 'Add to cart' }).click();
+    await expect(page.getByRole('dialog', { name: 'Shopping cart' })).toBeVisible();
+
+    await page.goto('/cart');
+    await expectReencodedImage(page.locator('main picture img').first());
   });
 
   test('quantities can be changed and lines removed', async ({ page }) => {

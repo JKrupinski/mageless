@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { waitForIsland } from './helpers';
+import { expectReencodedImage, waitForIsland } from './helpers';
 
 test.describe('search', () => {
   test('type-ahead suggests products and keyboard navigation works', async ({ page }) => {
@@ -15,6 +15,16 @@ test.describe('search', () => {
 
     await input.press('ArrowDown');
     await expect(listbox.getByRole('option').first()).toHaveAttribute('aria-selected', 'true');
+  });
+
+  test('suggestions show thumbnails re-encoded by the image endpoint', async ({ page }) => {
+    await page.goto('/');
+    await waitForIsland(page, 'SearchBox');
+    await page.getByRole('combobox', { name: 'Search products' }).fill('jacket');
+
+    await expectReencodedImage(
+      page.getByRole('listbox', { name: 'Search suggestions' }).locator('picture img').first(),
+    );
   });
 
   test('submitting the form lands on a server-rendered results page', async ({ page }) => {

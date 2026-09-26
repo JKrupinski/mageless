@@ -1,5 +1,6 @@
 /**
- * Responsive catalogue images.
+ * Responsive product images: catalogue tiles and gallery, cart lines and
+ * search suggestions.
  *
  * Magento hands out one pre-sized cache file per product image. Rather than
  * shipping that file to every screen, each image is re-served through Astro's
@@ -51,7 +52,7 @@ export interface ResponsiveImage {
 }
 
 /**
- * The image slots the catalogue renders. `sizes` mirrors the layout each slot
+ * The image slots the storefront renders. `sizes` mirrors the layout each slot
  * sits in, so it has to move with it: an estimate that is too small serves a
  * blurry image, one that is too large wastes bytes.
  */
@@ -75,6 +76,21 @@ export const IMAGE_PRESETS = {
   thumbnail: {
     widths: [64, 128, 192],
     sizes: '4rem',
+  },
+  /** A line in the cart drawer. */
+  cartDrawerLine: {
+    widths: [64, 128, 192],
+    sizes: '4rem',
+  },
+  /** A line on the cart page: 5rem wide on a phone, 6rem from `sm`. */
+  cartLine: {
+    widths: [96, 192, 288],
+    sizes: '(min-width: 40rem) 6rem, 5rem',
+  },
+  /** A search type-ahead suggestion, 2.5rem wide. */
+  suggestion: {
+    widths: [40, 80, 120],
+    sizes: '2.5rem',
   },
 } as const satisfies Record<string, ImagePreset>;
 

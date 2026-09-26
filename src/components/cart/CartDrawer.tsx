@@ -13,6 +13,8 @@ import {
 import type { CartSummary } from '@lib/cart/types';
 import { Button } from '@ui/Button';
 import { formatMoney } from '@lib/format';
+import { Picture } from '@ui/Picture';
+import { IMAGE_PRESETS } from '@lib/images';
 
 export interface CartDrawerProps {
   /** SSR snapshot so the badge and contents are right on first paint. */
@@ -144,8 +146,9 @@ export function CartDrawer({ initialCart, locale = 'en-US' }: CartDrawerProps) {
               {cart.items.map((item) => (
                 <li key={item.uid} className="flex gap-4 py-4">
                   {item.image ? (
-                    <img
+                    <Picture
                       src={item.image}
+                      preset={IMAGE_PRESETS.cartDrawerLine}
                       alt=""
                       width={64}
                       height={80}

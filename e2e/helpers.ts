@@ -1,4 +1,4 @@
-import type { Page } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
 
 /**
  * Wait until a named React island has hydrated.
@@ -19,4 +19,19 @@ export async function waitForIsland(page: Page, componentName: string): Promise<
     componentName,
     { timeout: 15_000 },
   );
+}
+
+/**
+ * Wait until an image has loaded, then check the browser took it from the
+ * image endpoint. Chromium supports AVIF, so it must pick the first `<source>`
+ * rather than the JPEG fallback or Magento's original.
+ */
+export async function expectReencodedImage(image: Locator): Promise<void> {
+  await expect
+    .poll(() => image.evaluate((element: HTMLImageElement) => element.naturalWidth))
+    .toBeGreaterThan(0);
+
+  const chosen = await image.evaluate((element: HTMLImageElement) => element.currentSrc);
+  expect(chosen).toContain('/_image?');
+  expect(chosen).toContain('f=avif');
 }
