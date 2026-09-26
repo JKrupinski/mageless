@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { expectReencodedImage } from './helpers';
 
 test.describe('catalogue browsing', () => {
   test('the home page lists categories and a merchandised row', async ({ page }) => {
@@ -101,14 +102,7 @@ test.describe('catalogue browsing', () => {
 
     const image = page.locator('article img').first();
     await expect(image).toHaveAttribute('fetchpriority', 'high');
-    await expect
-      .poll(() => image.evaluate((element: HTMLImageElement) => element.naturalWidth))
-      .toBeGreaterThan(0);
-
-    // Chromium supports AVIF, so it must pick the first <source>.
-    const chosen = await image.evaluate((element: HTMLImageElement) => element.currentSrc);
-    expect(chosen).toContain('/_image?');
-    expect(chosen).toContain('f=avif');
+    await expectReencodedImage(image);
   });
 
   /*
