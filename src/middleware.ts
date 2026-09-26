@@ -1,12 +1,23 @@
 import { defineMiddleware } from 'astro:middleware';
+import { IMAGE_ENDPOINT, isStorefrontImageQuery } from '@lib/images';
 
 const PRIVATE_PATHS = ['/cart', '/api/'];
 
 /**
  * Per-request concerns that do not belong in any single page: the active store
- * view, cache directives, and a couple of baseline security headers.
+ * view, cache directives, a couple of baseline security headers, and keeping
+ * the image endpoint to the variants the storefront renders.
  */
 export const onRequest = defineMiddleware(async (context, next) => {
+  // Matched on the route rather than the path, which may carry a trailing slash.
+  if (
+    context.routePattern === IMAGE_ENDPOINT &&
+    !isStorefrontImageQuery(context.url.searchParams)
+  ) {
+    // Refused before the endpoint fetches the original or encodes anything.
+    return new Response('Bad Request', { status: 400 });
+  }
+
   context.locals.storeCode = import.meta.env['PUBLIC_MAGENTO_STORE_CODE'] ?? 'default';
 
   const response = await next();

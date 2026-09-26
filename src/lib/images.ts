@@ -6,7 +6,8 @@
  * image endpoint (`/_image`, backed by sharp) at a handful of widths and in
  * AVIF and WebP, and the browser picks the smallest variant that fills its
  * slot. The endpoint only fetches hosts allowed by `image.domains` in
- * `astro.config.mjs`.
+ * `astro.config.mjs`, and only serves the variants these slots render (see
+ * `isStorefrontImageQuery`).
  *
  * The URLs are built here rather than with `getImage()` from `astro:assets`
  * because the gallery is a React island: it has to swap images in the browser,
@@ -14,12 +15,15 @@
  * service in front instead only has to change `transformUrl`.
  */
 
-const IMAGE_ENDPOINT = '/_image';
+export const IMAGE_ENDPOINT = '/_image';
 
 type ImageFormat = 'avif' | 'webp' | 'jpeg';
 
 /** Offered as `<source>` elements, best compression first. */
 const MODERN_FORMATS = ['avif', 'webp'] as const satisfies readonly ImageFormat[];
+
+/** For a browser that takes neither modern format. */
+const FALLBACK_FORMAT = 'jpeg' satisfies ImageFormat;
 
 export interface ImagePreset {
   /** Rendered widths, in pixels, the browser may choose between. Ascending. */
@@ -83,16 +87,56 @@ function srcSetFor(src: string, widths: readonly number[], format: ImageFormat):
   return widths.map((width) => `${transformUrl(src, width, format)} ${width}w`).join(', ');
 }
 
+function fallbackWidth(preset: ImagePreset): number {
+  return Math.max(...preset.widths);
+}
+
 /** Every variant of one Magento image a `<picture>` needs for the given slot. */
 export function responsiveImage(src: string, preset: ImagePreset): ResponsiveImage {
-  const widest = Math.max(...preset.widths);
-
   return {
-    src: transformUrl(src, widest, 'jpeg'),
+    src: transformUrl(src, fallbackWidth(preset), FALLBACK_FORMAT),
     sizes: preset.sizes,
     sources: MODERN_FORMATS.map((format) => ({
       type: `image/${format}`,
       srcSet: srcSetFor(src, preset.widths, format),
     })),
   };
+}
+
+function variantKey(width: number | string, format: string): string {
+  return `${width}:${format}`;
+}
+
+/** The width and format pairs `responsiveImage` renders for a slot. */
+function variantsOf(preset: ImagePreset): string[] {
+  return [
+    ...MODERN_FORMATS.flatMap((format) => preset.widths.map((width) => variantKey(width, format))),
+    variantKey(fallbackWidth(preset), FALLBACK_FORMAT),
+  ];
+}
+
+const STOREFRONT_VARIANTS = new Set(Object.values(IMAGE_PRESETS).flatMap(variantsOf));
+
+/** The parameters `transformUrl` sets, and so the only ones a query may carry. */
+const TRANSFORM_PARAMS = ['href', 'w', 'f'].sort().join();
+
+/**
+ * Whether an image endpoint query asks for a variant one of `IMAGE_PRESETS`
+ * renders. The endpoint encodes on request, so anything else (another width, a
+ * quality override, a crop) would let a caller make the server encode without
+ * limit, and leave no fixed set of variants to cache.
+ *
+ * Widths are compared as the exact strings `transformUrl` writes, so `0240`
+ * or `240.0` are refused rather than parsed into an allowed width.
+ */
+export function isStorefrontImageQuery(params: URLSearchParams): boolean {
+  // Each exactly once: a repeated `w` would leave the endpoint to pick a value.
+  if ([...params.keys()].sort().join() !== TRANSFORM_PARAMS) return false;
+
+  const href = params.get('href');
+  const width = params.get('w');
+  const format = params.get('f');
+  if (!href || width === null || format === null) return false;
+
+  return STOREFRONT_VARIANTS.has(variantKey(width, format));
 }
